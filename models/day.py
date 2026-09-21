@@ -5,6 +5,11 @@ class Day:
         self.date = date
         self.meals = []
         self.workouts = []
+        self.cardio_sessions = []
+
+    # Method to add a cardio session to the day
+    def add_cardio(self, cardio):
+        self.cardio_sessions.append(cardio)
 
     # Method to add a meal to the day
     def add_meal(self, meal):
@@ -33,6 +38,15 @@ class Day:
 
         return total
 
+    # Sum the distance and duration of all cardio in a day
+    def get_cardio_sums(self):
+        totals = {"dist": 0, "duration": 0}
+
+        for cardio_session in self.cardio_sessions:
+            totals["dist"] += cardio_session.distance
+            totals["duration"] += cardio_session.duration
+
+        return totals
 
     # Print the information for a date
     def display_date(self):
@@ -46,4 +60,9 @@ class Day:
         print("TRAINING\n")
         for workout in self.workouts:
             workout.workout_summary()
-        
+
+        print("CARDIO\n")
+        for cardio_session in self.cardio_sessions:
+            print(f"\n{cardio_session.name}: ")
+            print(f"Distance: {cardio_session.distance}")
+            print(f"Duration: {cardio_session.duration}")
