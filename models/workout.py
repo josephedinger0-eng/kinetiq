@@ -13,6 +13,15 @@ class Workout:
     def workout_summary(self):
         print(self.name)
         print("=================")
-        
+
         for exercise in self.exercises:
             print(exercise)
+
+    # Calculate the volume of a workout
+    def get_volume(self):
+        total = 0
+        for exercise in self.exercises:
+            for current_set in exercise.sets:
+                total += current_set[0] * current_set[1]
+
+        return total
