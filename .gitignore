@@ -219,3 +219,6 @@ __marimo__/
 
 # main file for testing only
 main.py
+
+# Database
+kinetiq.db
