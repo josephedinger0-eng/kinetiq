@@ -1,12 +1,13 @@
 # Define the Food class
 class Food:
     # Basic constructor for a Food
-    def __init__(self, name, kcal, pro, carb, fat):
+    def __init__(self, name, kcal, pro, carb, fat, id = None):
         self.name = name
         self.kcal = kcal
         self.pro = pro
         self.carb = carb
         self.fat = fat
+        self.id = id
 
     # Calculate the nutrients of food in amount quantity
     def get_nutrition(self, quantity):
