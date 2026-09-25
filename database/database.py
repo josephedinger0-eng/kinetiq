@@ -2,10 +2,13 @@ import sqlite3 # Import SQLite
 from models.food import Food
 from models.meal import Meal
 from models.day import Day
+from models.workout import Workout
+from models.exercise import Exercise
 from datetime import date
 
 
-connection = sqlite3.connect("kinetiq.db") # Conenct SQLite to the database
+connection = sqlite3.connect("kinetiq.db") # Connect SQLite to the database
+connection.execute("PRAGMA foreign_keys = ON") # Enable foreign keys
 
 # Create the foods table with values (columns) if it doesn't exist already
 connection.execute("""
@@ -32,7 +35,9 @@ connection.execute("""
     CREATE TABLE IF NOT EXISTS meal_foods (
         meal_id INTEGER NOT NULL,
         food_id INTEGER NOT NULL,
-        quantity REAL NOT NULL   
+        quantity REAL NOT NULL,
+        FOREIGN KEY (meal_id) REFERENCES meals(id),   
+        FOREIGN KEY (food_id) REFERENCES foods(id)   
     )
 """)
 
@@ -48,7 +53,40 @@ connection.execute("""
 connection.execute("""
     CREATE TABLE IF NOT EXISTS day_meals (
         day_id INTEGER NOT NULL,
-        meal_id INTEGER NOT NULL
+        meal_id INTEGER NOT NULL,
+        FOREIGN KEY (meal_id) REFERENCES meals(id),
+        FOREIGN KEY (day_id) REFERENCES days(id)
+    )
+""")
+
+# Create the workouts table
+connection.execute("""
+    CREATE TABLE IF NOT EXISTS workouts (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        day_id INTEGER NOT NULL,
+        FOREIGN KEY (day_id) REFERENCES days(id)
+    )
+""")
+
+# Create the exercises table
+connection.execute("""
+    CREATE TABLE IF NOT EXISTS exercises (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        workout_id INTEGER NOT NULL,
+        FOREIGN KEY (workout_id) REFERENCES workouts(id)
+    )
+""")
+
+# Create the sets table
+connection.execute("""
+    CREATE TABLE IF NOT EXISTS sets (
+        id INTEGER PRIMARY KEY,
+        exercise_id INTEGER NOT NULL,
+        reps INTEGER NOT NULL,
+        weight REAL NOT NULL,
+        FOREIGN KEY (exercise_id) REFERENCES exercises(id)
     )
 """)
 
@@ -150,6 +188,7 @@ def save_day(day):
 
     return day_id
 
+# Load a day at day_id
 def get_day(day_id):
     cursor = connection.execute("""
         SELECT date
@@ -174,3 +213,68 @@ def get_day(day_id):
         day.add_meal(meal)
 
     return day
+
+# Save workouts to workouts table
+def save_workout(workout, day_id):
+    cursor = connection.execute("""
+        INSERT INTO workouts (name, day_id)
+        VALUES (?, ?)
+    """, (workout.name, day_id))
+
+    workout_id = cursor.lastrowid
+    for exercise in workout.exercises:
+        cursor = connection.execute("""
+            INSERT INTO exercises (name, workout_id)
+            VALUES (?, ?)
+        """, (exercise.name, workout_id))
+
+        exercise_id = cursor.lastrowid
+        for current_set in exercise.sets:
+            reps = current_set[0]
+            weight = current_set[1]
+            connection.execute("""
+                INSERT INTO sets (exercise_id, reps, weight)
+                VALUES (?, ?, ?)
+            """, (exercise_id, reps, weight))
+
+    connection.commit()
+
+# Load a workout at workout_id
+def get_workout(workout_id):
+    cursor = connection.execute("""
+        SELECT name 
+        FROM workouts
+        WHERE id = ?
+    """, (workout_id,))
+
+    row = cursor.fetchone()
+
+    workout = Workout(row[0])
+
+    cursor = connection.execute("""
+        SELECT id, name
+        FROM exercises
+        WHERE workout_id = ?
+    """, (workout_id,))
+
+    rows = cursor.fetchall()
+    for row in rows:
+        exercise_id = row[0]
+        exercise = Exercise(row[1])
+
+        cursor = connection.execute("""
+            SELECT reps, weight
+            FROM sets
+            WHERE exercise_id = ?
+        """, (exercise_id,))
+
+        set_rows = cursor.fetchall()
+
+        for set_row in set_rows:
+            reps = set_row[0]
+            weight = set_row[1]
+            exercise.add_set(reps, weight)
+
+        workout.add_exercise(exercise)
+
+    return workout
