@@ -63,9 +63,7 @@ connection.execute("""
 connection.execute("""
     CREATE TABLE IF NOT EXISTS workouts (
         id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        day_id INTEGER NOT NULL,
-        FOREIGN KEY (day_id) REFERENCES days(id)
+        name TEXT NOT NULL
     )
 """)
 
@@ -90,6 +88,16 @@ connection.execute("""
     )
 """)
 
+# Create the day_workouts table
+connection.execute("""
+    CREATE TABLE IF NOT EXISTS day_workouts (
+        day_id INTEGER NOT NULL,
+        workout_id INTEGER NOT NULL,
+        FOREIGN KEY (day_id) REFERENCES days(id),
+        FOREIGN KEY (workout_id) REFERENCES workouts(id)
+    )
+""")
+
 connection.commit()
 
 # Save a food object into the foods database
@@ -109,7 +117,7 @@ def get_foods():
     foods = []
 
     for row in rows:
-        food = Food(row[1], row[2], row[3], row[4], row[5])
+        food = Food(row[1], row[2], row[3], row[4], row[5], row[0])
         foods.append(food)
 
     return foods
@@ -122,6 +130,7 @@ def save_meal(meal):
     """, (meal.name,))
 
     meal_id = cursor.lastrowid
+    meal.id = meal_id
 
     for entry in meal.entries:
         connection.execute("""
@@ -184,6 +193,14 @@ def save_day(day):
             VALUES (?,?)
         """, (day_id, meal.id))
 
+    for workout in day.workouts:
+        workout_id = save_workout(workout)
+
+        connection.execute("""
+            INSERT INTO day_workouts
+            VALUES (?,?)
+        """, (day_id, workout_id))
+
     connection.commit()
 
     return day_id
@@ -212,16 +229,29 @@ def get_day(day_id):
         meal = get_meal(meal_id)
         day.add_meal(meal)
 
+    cursor = connection.execute("""
+        SELECT workout_id
+        FROM day_workouts
+        WHERE day_id = ?
+    """, (day_id,))
+
+    rows = cursor.fetchall()
+    for row in rows:
+        workout_id = row[0]
+        workout = get_workout(workout_id)
+        day.add_workout(workout)
+
     return day
 
 # Save workouts to workouts table
-def save_workout(workout, day_id):
+def save_workout(workout):
     cursor = connection.execute("""
-        INSERT INTO workouts (name, day_id)
-        VALUES (?, ?)
-    """, (workout.name, day_id))
+        INSERT INTO workouts (name)
+        VALUES (?)
+    """, (workout.name,))
 
     workout_id = cursor.lastrowid
+
     for exercise in workout.exercises:
         cursor = connection.execute("""
             INSERT INTO exercises (name, workout_id)
@@ -238,6 +268,7 @@ def save_workout(workout, day_id):
             """, (exercise_id, reps, weight))
 
     connection.commit()
+    return workout_id
 
 # Load a workout at workout_id
 def get_workout(workout_id):
