@@ -4,6 +4,7 @@ from models.meal import Meal
 from models.day import Day
 from models.workout import Workout
 from models.exercise import Exercise
+from models.cardio_session import CardioSession
 from datetime import date
 
 
@@ -95,6 +96,26 @@ connection.execute("""
         workout_id INTEGER NOT NULL,
         FOREIGN KEY (day_id) REFERENCES days(id),
         FOREIGN KEY (workout_id) REFERENCES workouts(id)
+    )
+""")
+
+# Create the cardio_sessions table
+connection.execute("""
+    CREATE TABLE IF NOT EXISTS cardio_sessions (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        distance REAL NOT NULL,
+        duration REAL NOT NULL
+    )
+""")
+
+# Create the day_cardio table
+connection.execute("""
+    CREATE TABLE IF NOT EXISTS day_cardio (
+        day_id INTEGER NOT NULL,
+        cardio_id INTEGER NOT NULL,
+        FOREIGN KEY (day_id) REFERENCES days(id),
+        FOREIGN KEY (cardio_id) REFERENCES cardio_sessions(id)
     )
 """)
 
@@ -201,6 +222,14 @@ def save_day(day):
             VALUES (?,?)
         """, (day_id, workout_id))
 
+    for cardio in day.cardio_sessions:
+        cardio_id = save_cardio(cardio)
+
+        connection.execute("""
+            INSERT INTO day_cardio
+            VALUES (?,?)
+        """, (day_id, cardio_id))
+
     connection.commit()
 
     return day_id
@@ -240,6 +269,18 @@ def get_day(day_id):
         workout_id = row[0]
         workout = get_workout(workout_id)
         day.add_workout(workout)
+
+    cursor = connection.execute("""
+        SELECT cardio_id
+        FROM day_cardio
+        WHERE day_id = ?
+    """, (day_id,))
+
+    rows = cursor.fetchall()
+    for row in rows:
+        cardio_id = row[0]
+        cardio_session = get_cardio(cardio_id)
+        day.add_cardio(cardio_session)
 
     return day
 
@@ -309,3 +350,29 @@ def get_workout(workout_id):
         workout.add_exercise(exercise)
 
     return workout
+
+# Save a cardio session
+def save_cardio(cardio):
+    cursor = connection.execute("""
+        INSERT INTO cardio_sessions (name, distance, duration)
+        VALUES (?, ?, ?)
+    """, (cardio.name, cardio.distance, cardio.duration))
+
+    cardio_id = cursor.lastrowid
+
+    return cardio_id
+
+# Load a cardio session
+def get_cardio(cardio_id):
+    cursor = connection.execute("""
+        SELECT name, distance, duration
+        FROM cardio_sessions
+        WHERE id = ?
+    """, (cardio_id,))
+
+    row = cursor.fetchone()
+    cardio_session = CardioSession(row[0], row[1], row[2])
+
+    return cardio_session
+
+
