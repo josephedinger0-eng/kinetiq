@@ -3,9 +3,10 @@ from models.food_entry import FoodEntry
 # Define the Meal class
 class Meal:
     # Basic constructor for a Meal
-    def __init__(self, name):
+    def __init__(self, name, id = None):
         self.name = name
         self.entries = []
+        self.id = id
 
     # Adds a food (key) to entries with a quantity (value)
     def add_food(self, food, quantity):

@@ -1,6 +1,8 @@
 import sqlite3 # Import SQLite
 from models.food import Food
 from models.meal import Meal
+from models.day import Day
+from datetime import date
 
 
 connection = sqlite3.connect("kinetiq.db") # Conenct SQLite to the database
@@ -14,6 +16,39 @@ connection.execute("""
         protein REAL NOT NULL,
         carbs REAL NOT NULL,
         fat REAL NOT NULL    
+    )
+""")
+
+# Create the meals table 
+connection.execute("""
+    CREATE TABLE IF NOT EXISTS meals (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL    
+    )
+""")
+
+# Create the meal_foods table 
+connection.execute("""
+    CREATE TABLE IF NOT EXISTS meal_foods (
+        meal_id INTEGER NOT NULL,
+        food_id INTEGER NOT NULL,
+        quantity REAL NOT NULL   
+    )
+""")
+
+# Create the days table
+connection.execute("""
+    CREATE TABLE IF NOT EXISTS days (
+        id INTEGER PRIMARY KEY,
+        date TEXT NOT NULL
+    )
+""")
+
+# Create the day_meals table
+connection.execute("""
+    CREATE TABLE IF NOT EXISTS day_meals (
+        day_id INTEGER NOT NULL,
+        meal_id INTEGER NOT NULL
     )
 """)
 
@@ -41,26 +76,7 @@ def get_foods():
 
     return foods
 
-
-# Create the meals table 
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS meals (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL    
-    )
-""")
-
-# Create the meal_foods table 
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS meal_foods (
-        meal_id INTEGER NOT NULL,
-        food_id INTEGER NOT NULL,
-        quantity REAL NOT NULL   
-    )
-""")
-
-connection.commit()
-
+# Save meals to the table
 def save_meal(meal):
     cursor = connection.execute("""
         INSERT INTO meals (name)
@@ -77,6 +93,7 @@ def save_meal(meal):
 
     connection.commit()
 
+# Load a meal at meal_id
 def get_meal(meal_id):
     cursor = connection.execute("""
         SELECT name
@@ -85,7 +102,7 @@ def get_meal(meal_id):
     """, (meal_id,))
 
     row = cursor.fetchone()
-    meal = Meal(row[0])
+    meal = Meal(row[0], meal_id)
 
     cursor = connection.execute("""
             SELECT food_id, quantity
@@ -113,3 +130,47 @@ def get_meal(meal_id):
         
 
     return meal
+
+# Save days into the date table, return the ID of the day
+def save_day(day):
+    cursor = connection.execute("""
+        INSERT INTO days (date)
+        VALUES (?)
+    """, (day.date,))
+
+    day_id = cursor.lastrowid
+
+    for meal in day.meals:
+        connection.execute("""
+            INSERT INTO day_meals 
+            VALUES (?,?)
+        """, (day_id, meal.id))
+
+    connection.commit()
+
+    return day_id
+
+def get_day(day_id):
+    cursor = connection.execute("""
+        SELECT date
+        FROM days
+        WHERE id = ?
+    """, (day_id,))
+
+    row = cursor.fetchone()
+    day_date = date.fromisoformat(row[0])
+    day = Day(day_date)
+
+    cursor = connection.execute("""
+        SELECT meal_id 
+        FROM day_meals
+        WHERE day_id = ?
+    """, (day_id,))
+
+    rows = cursor.fetchall()
+    for row in rows:
+        meal_id = row[0]
+        meal = get_meal(meal_id)
+        day.add_meal(meal)
+
+    return day
