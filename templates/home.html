@@ -8,161 +8,191 @@
 
 <body>
     
-    <header>
-        <h1>Kinetiq</h1>
-    </header>
+<header>
+    <h1>Kinetiq</h1>
+</header>
 
-    <main>
+<main>
+
+<div class="day-navigation">
+
+    <a class="nav-button" href="{{ url_for('previous_day', day_id=day.id) }}">
+        ← Previous Day
+    </a>
+
+    <div class="day-title">
+        <h2>{{ day.date.strftime("%A, %B %d, %Y") }}</h2>
+    </div>
+
+    <a class="nav-button" href="{{ url_for('next_day', day_id=day.id) }}">
+        Next Day →
+    </a>
+
+</div>
+
+<div class="back-link">
+<a href="{{ url_for('days') }}">← All Days</a>
+</div>
     
-    <div class="day-navigation">
+    <section class="daily-summary">
+        <h2>Daily Nutrition</h2>
 
-        <a class="nav-button" href="{{ url_for('previous_day', day_id=day.id) }}">
-            ← Previous Day
-        </a>
+        <div class="nutrition-grid">
 
-        <div class="day-title">
-            <h2>{{ day.date.strftime("%A, %B %d, %Y") }}</h2>
-        </div>
+            <div class="nutrition-card">
+                <h3>Calories</h3>
+                <p>{{ day.get_meal_totals()["kcal"] }}</p>
+            </div>
 
-        <a class="nav-button" href="{{ url_for('next_day', day_id=day.id) }}">
-            Next Day →
-        </a>
+            <div class="nutrition-card">
+                <h3>Protein</h3>
+                <p>{{ day.get_meal_totals()["pro"] }}g</p>
+            </div>
+
+            <div class="nutrition-card">
+                <h3>Carbs</h3>
+                <p>{{ day.get_meal_totals()["carb"] }}g</p>
+            </div>
+
+            <div class="nutrition-card">
+                <h3>Fat</h3>
+                <p>{{ day.get_meal_totals()["fat"] }}g</p>
+            </div>
 
     </div>
 
-<div class="back-link">
-    <a href="{{ url_for('home') }}">← All Days</a>
-</div>
-        
-        <section class="daily-summary">
-            <h2>Daily Nutrition</h2>
+    </section>
 
-            <div class="nutrition-grid">
+    <br><br>
 
-                <div class="nutrition-card">
-                    <h3>Calories</h3>
-                    <p>{{ day.get_meal_totals()["kcal"] }}</p>
-                </div>
+    <section>
 
-                <div class="nutrition-card">
-                    <h3>Protein</h3>
-                    <p>{{ day.get_meal_totals()["pro"] }}g</p>
-                </div>
+        <div class="section-header">
 
-                <div class="nutrition-card">
-                    <h3>Carbs</h3>
-                    <p>{{ day.get_meal_totals()["carb"] }}g</p>
-                </div>
+            <h2>Meals</h2>
 
-                <div class="nutrition-card">
-                    <h3>Fat</h3>
-                    <p>{{ day.get_meal_totals()["fat"] }}g</p>
-                </div>
+            <a class="button" href="{{ url_for('new_meal', day_id=day.id) }}">
+            + Add Meal
+            </a>
 
         </div>
 
-        </section>
+        {% for meal in day.meals %}
 
-        <br><br>
+            <div class="meal">
+                <div class="meal-header">
 
-        <section>
+                    <h3>{{ meal.name }}</h3>
 
-            <div class="section-header">
+                    <a class="small-button"
+                        href="{{ url_for('new_food', day_id=day.id, meal_id=meal.id) }}">
+                        + Add Food
+                    </a>
 
-                <h2>Meals</h2>
+                    <form method="POST" 
+                        action="{{ url_for('delete_meal_route',
+                        day_id=day.id,
+                        meal_id=meal.id) }}">
 
-                <a class="button" href="{{ url_for('new_meal', day_id=day.id) }}">
-                + Add Meal
-                </a>
+                        <button class="delete-button" type="submit">
+                            Delete Meal
+                        </button>
 
+                    </form>
+
+                </div>
             </div>
 
-            {% for meal in day.meals %}
+            {% for entry in meal.entries %}
+            <div class="food-entry">
 
-                <div class="meal">
-                    <div class="meal-header">
+                <div class="food-header">
+                    <h4>{{ entry.food.name }} - {{ entry.quantity }}g</h4>
 
-                        <h3>{{ meal.name }}</h3>
-
+                    <div class="food-actions">
                         <a class="small-button"
-                            href="{{ url_for('new_food', day_id=day.id, meal_id=meal.id) }}">
-                            + Add Food
+                        href="{{ url_for('edit_food', day_id=day.id, meal_id=meal.id, entry_id=entry.id) }}">
+                            Edit
                         </a>
+
+                        <form method="POST"
+                            action="{{ url_for('delete_food', day_id=day.id, meal_id=meal.id, entry_id=entry.id) }}">
+                            <button class="delete-button" type="submit">
+                                Delete
+                            </button>
+                        </form>
                     </div>
                 </div>
 
-                    {% for entry in meal.entries %}
-                    <div class="food-entry">
-                        <h4>{{ entry.food.name }} - {{ entry.quantity }}g</h4>
-
-                        <p>Calories: {{ entry.nutrition["kcal"] }}</p>
-                        <p>Protein: {{ entry.nutrition["pro"] }}g</p>
-                        <p>Carbohydrates: {{ entry.nutrition["carb"] }}g</p>
-                        <p>Fat: {{ entry.nutrition["fat"] }}g</p>
-                    </div>
-                    {% endfor %}
-
-                    <div class="meal-total">
-                        <h4>Meal Total</h4>
-
-                        <p>Calories: {{ meal.get_meal_totals()["kcal"] }}</p>
-                        <p>Protein: {{ meal.get_meal_totals()["pro"] }}g</p>
-                        <p>Carbs: {{ meal.get_meal_totals()["carb"] }}g</p>
-                        <p>Fat: {{ meal.get_meal_totals()["fat"] }}g</p>
-                    </div>
-
-                    <br><br>
+                <p>Calories: {{ entry.nutrition["kcal"] }}</p>
+                <p>Protein: {{ entry.nutrition["pro"] }}g</p>
+                <p>Carbohydrates: {{ entry.nutrition["carb"] }}g</p>
+                <p>Fat: {{ entry.nutrition["fat"] }}g</p>
 
                 </div>
-                
-            {% endfor %}
-
-        </section>
-
-        <section>
-
-             <h2>Training</h2>
-
-            {% for workout in day.workouts %}
-
-                <div class="workout"> 
-
-                    <h3>{{ workout.name }}</h3>
-                    
-                    {% for exercise in workout.exercises %}
-                        <h4> {{ exercise.name }} </h4>
-
-                        {% for current_set in exercise.sets %}
-                            <p>{{ current_set[0] }} x {{ current_set[1] }}lbs</p>
-                        {% endfor %}
-
-                    {% endfor %}
-
-                </div>
-                
-            {% endfor %}
-
-        </section>
-
-        <section>
-
-             <h2>Cardio</h2>
-
-                {% for cardio in day.cardio_sessions %}
-
-                    <div class="cardio"> 
-
-                        <h3>{{ cardio.name }}</h3>  
-                        <p>{{ cardio.distance }} miles</p>
-                        <p>{{ cardio.duration }} minutes</p>
-
-                    </div>
-                    
                 {% endfor %}
 
-        </section>
+                <div class="meal-total">
+                    <h4>Meal Total</h4>
 
-    </main>
+                    <p>Calories: {{ meal.get_meal_totals()["kcal"] }}</p>
+                    <p>Protein: {{ meal.get_meal_totals()["pro"] }}g</p>
+                    <p>Carbs: {{ meal.get_meal_totals()["carb"] }}g</p>
+                    <p>Fat: {{ meal.get_meal_totals()["fat"] }}g</p>
+                </div>
+
+                <br><br>
+
+            </div>
+            
+        {% endfor %}
+
+    </section>
+
+    <section>
+
+        <h2>Training</h2>
+
+        {% for workout in day.workouts %}
+
+            <div class="workout"> 
+
+                <h3>{{ workout.name }}</h3>
+                
+                {% for exercise in workout.exercises %}
+                    <h4> {{ exercise.name }} </h4>
+
+                    {% for current_set in exercise.sets %}
+                        <p>{{ current_set[0] }} x {{ current_set[1] }}lbs</p>
+                    {% endfor %}
+
+                {% endfor %}
+
+            </div>
+            
+        {% endfor %}
+
+    </section>
+
+    <section>
+
+        <h2>Cardio</h2>
+
+        {% for cardio in day.cardio_sessions %}
+
+            <div class="cardio"> 
+
+                <h3>{{ cardio.name }}</h3>  
+                <p>{{ cardio.distance }} miles</p>
+                <p>{{ cardio.duration }} minutes</p>
+
+            </div>
+            
+        {% endfor %}
+
+    </section>
+
+</main>
        
 </body>
 

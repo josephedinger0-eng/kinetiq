@@ -6,11 +6,21 @@ from datetime import date
 
 app = Flask(__name__)
 
-# Display recent days on the home page
+# Display today on home page
 @app.route("/")
 def home():
+    today = date.today()
+
+    day_id = get_or_create_day(today)
+
+    return redirect(url_for("day_page", day_id=day_id))
+
+# Display past days
+@app.route("/days")
+def days():
     days = get_days()
     return render_template("index.html", days=days)
+
 
 # Display the day creation page
 @app.route("/day/new", methods=["GET", "POST"])
@@ -84,6 +94,31 @@ def next_day(day_id):
 
     return redirect(url_for("day_page", day_id=day_id))
 
+# Delete a meal from a day
+@app.route("/day/<int:day_id>/meal/<int:meal_id>/delete")
+def delete_meal_route(day_id, meal_id):
+    delete_meal(meal_id)
+
+    return redirect(url_for("day_page", day_id=day_id))
+
+# Delete a food_entry from a meal
+@app.route("/day/<int:day_id>/meal/<int:meal_id>/food/<int:entry_id>/delete", methods=["POST"])
+def delete_food(day_id, meal_id, entry_id):
+    delete_food_entry(entry_id)
+
+    return redirect(url_for("day_page", day_id=day_id))
+
+# Edit an existing fodo_entry
+@app.route("/day/<int:day_id>/meal/<int:meal_id>/food/<int:entry_id>/edit", methods=["GET","POST"])
+def edit_food(day_id, meal_id, entry_id):
+    if request.method == "POST":
+        quantity = float(request.form["quantity"])
+
+        update_food_entry(entry_id, quantity)
+
+        return redirect(url_for("day_page", day_id=day_id))
+
+    return render_template("edit_food.html", day_id=day_id, meal_id=meal_id, entry_id=entry_id)
 # Display the about section
 @app.route("/about")
 def about():

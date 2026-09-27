@@ -248,6 +248,39 @@ header h1 {
     color: #2563eb;
 }
 
+.meal-actions,
+.food-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.meal-actions form,
+.food-actions form {
+    margin: 0;
+}
+
+.delete-button {
+    border: none;
+    border-radius: 7px;
+    padding: 7px 11px;
+    background: #dc2626;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.delete-button:hover {
+    background: #b91c1c;
+}
+
+.food-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 800px) {

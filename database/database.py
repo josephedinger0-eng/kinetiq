@@ -1,5 +1,6 @@
 import sqlite3 # Import SQLite
 from models.food import Food
+from models.food_entry import FoodEntry
 from models.meal import Meal
 from models.day import Day
 from models.workout import Workout
@@ -39,6 +40,7 @@ def initialize_database():
     # Create the meal_foods table 
     connection.execute("""
         CREATE TABLE IF NOT EXISTS meal_foods (
+            id INTEGER PRIMARY KEY,
             meal_id INTEGER NOT NULL,
             food_id INTEGER NOT NULL,
             quantity REAL NOT NULL,
@@ -51,7 +53,7 @@ def initialize_database():
     connection.execute("""
         CREATE TABLE IF NOT EXISTS days (
             id INTEGER PRIMARY KEY,
-            date TEXT NOT NULL
+            date TEXT NOT NULL UNIQUE
         )
     """)
 
@@ -200,7 +202,7 @@ def get_meal(connection, meal_id):
     meal = Meal(row[0], meal_id)
 
     cursor = connection.execute("""
-            SELECT food_id, quantity
+            SELECT id, food_id, quantity
             FROM meal_foods
             WHERE meal_id = ?
         """, (meal_id,))
@@ -208,20 +210,13 @@ def get_meal(connection, meal_id):
     row = cursor.fetchall()
 
     for food_entry in row:
-        food_id = food_entry[0]
-        quantity = food_entry[1]
+        entry_id = food_entry[0]
+        food_id = food_entry[1]
+        quantity = food_entry[2]
 
-        cursor = connection.execute("""
-                    SELECT *
-                    FROM foods
-                    WHERE id = ?
-                """, (food_id,))
+        food = get_food(connection, food_id)
 
-        food_row = cursor.fetchone()
-
-        food = Food(food_row[1], food_row[2], food_row[3], food_row[4], food_row[5], food_row[0])
-
-        meal.add_food(food, quantity)
+        meal.add_food(food, quantity, entry_id)
         
     return meal
 
@@ -450,3 +445,90 @@ def add_food_to_meal(meal_id, food_id, quantity):
 
     connection.commit()
     connection.close()
+
+# Delete a meal from a day
+def delete_meal(meal_id):
+    connection = get_connection()
+
+    connection.execute("""
+        DELETE FROM meal_foods
+        WHERE meal_id =?
+    """, (meal_id,))
+
+    connection.execute("""
+        DELETE FROM day_meals
+        WHERE mea;l_id = ?
+    """, (meal_id,))
+
+    connection.execute("""
+        DELETE FROM meals
+        WHRERE id = ?
+    """, (meal_id,))
+
+    connection.commit()
+    connection.close()
+
+# Delete an existing food_entry
+def delete_food_entry(entry_id):
+    connection = get_connection()
+
+    connection.execute("""
+        DELETE FROM meal_foods
+        WHERE id = ?
+    """, (entry_id,))
+
+# Modify an exisiting food_entry
+def update_food_entry(entry_id, quantity):
+    connection = get_connection()
+
+    connection.execute("""
+        UPDATE meal_foods
+        SET quantity = ?
+        WHERE id = ?
+    """, (quantity, entry_id))
+
+    connection.commit() 
+    connection.close()
+
+# Return a day object at day_date
+def get_day_by_date(day_date):
+    connection = get_connection()
+
+    cursor = connection.execute("""
+        SELECT id
+        FROM days
+        WHERE date = ?
+    """, (day_date,))
+
+    row = cursor.fetchone()
+    connection.close()
+
+    return row[0] if row else None
+
+# Returns day at day_date or creates one if none exists
+def get_or_create_day(day_date):
+    connection = get_connection()
+
+    cursor = connection.execute("""
+        SELECT id
+        FROM days
+        WHERE date = ?
+    """, (day_date,))
+
+    row = cursor.fetchone()
+
+    if row:
+        connection.close()
+        return row[0]
+
+    cursor = connection.execute("""
+        INSERT INTO days (date)
+        VALUES (?)
+    """, (day_date,))
+
+    day_id = cursor.lastrowid
+
+    connection.commit()
+    connection.close()
+
+    return day_id

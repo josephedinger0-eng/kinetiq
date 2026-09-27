@@ -9,8 +9,8 @@ class Meal:
         self.id = id
 
     # Adds a food (key) to entries with a quantity (value)
-    def add_food(self, food, quantity):
-        self.entries.append(FoodEntry(food, quantity))
+    def add_food(self, food, quantity, id):
+        self.entries.append(FoodEntry(food, quantity, id))
 
     # Prints each food in a meal
     def display_foods(self):
