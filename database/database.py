@@ -273,7 +273,7 @@ def get_day(connection, day_id):
 
     row = cursor.fetchone()
     day_date = date.fromisoformat(row[0])
-    day = Day(day_date)
+    day = Day(day_date, day_id)
 
     cursor = connection.execute("""
         SELECT meal_id 

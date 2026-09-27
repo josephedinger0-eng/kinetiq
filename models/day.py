@@ -1,11 +1,12 @@
 # Define the Day class
 class Day:
     # Basic constructor for a day
-    def __init__(self, date):
+    def __init__(self, date, id=None):
         self.date = date
         self.meals = []
         self.workouts = []
         self.cardio_sessions = []
+        self.id = id
 
     # Method to add a cardio session to the day
     def add_cardio(self, cardio):

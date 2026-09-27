@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 from database.database import *
 from models.day import Day
 from models.meal import Meal
+from datetime import date
 
 app = Flask(__name__)
 
@@ -53,13 +54,35 @@ def new_food(day_id, meal_id):
 
     if request.method == "POST":
         food_id = request.form["food_id"]
-        quantity = request.form["quantity"]
+        quantity = float(request.form["quantity"])
 
         add_food_to_meal(meal_id, food_id, quantity)
 
         return redirect(url_for("day_page", day_id=day_id))
 
     return render_template("new_food.html", day_id=day_id, meal_id=meal_id,foods=foods)
+
+# Display yesterday's information
+@app.route("/day/<int:day_id>/previous")
+def previous_day(day_id):
+    days = get_days()
+
+    for i, day in enumerate(days):
+        if day[0] == day_id and i + 1 < len(days):
+            return redirect(url_for("day_page", day_id=days[i + 1][0]))
+
+    return redirect(url_for("day_page", day_id=day_id))
+
+# Display tomorrow's information
+@app.route("/day/<int:day_id>/next")
+def next_day(day_id):
+    days = get_days()
+
+    for i, day in enumerate(days):
+        if day[0] == day_id and i > 0:
+            return redirect(url_for("day_page", day_id=days[i - 1][0]))
+
+    return redirect(url_for("day_page", day_id=day_id))
 
 # Display the about section
 @app.route("/about")
