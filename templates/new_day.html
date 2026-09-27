@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>New Day - Kinetiq</title>
+</head>
+
+<body>
+
+    <h1>Create New Day</h1>
+
+    <form method="POST">
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date">
+
+        <button type="submit">Create Day</button>
+    </form>
+
+</body>
+</html>

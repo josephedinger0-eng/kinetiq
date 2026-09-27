@@ -141,7 +141,7 @@ def save_food(food):
     connection.commit()
     connection.close()
 
-# Load a food from the database
+# Load foods from the database
 def get_foods():
     connection = get_connection()
 
@@ -158,7 +158,7 @@ def get_foods():
     return foods
 
 # Save meals to the table
-def save_meal(meal):
+def save_meal(meal, day_id=None):
     connection = get_connection()
 
     cursor = connection.execute("""
@@ -175,8 +175,17 @@ def save_meal(meal):
             VALUES(?,?,?)
         """, (meal_id, entry.food.id, entry.quantity))
 
+    if day_id is not None:
+        connection.execute("""
+            INSERT INTO day_meals (day_id, meal_id)
+            VALUES (?, ?)
+        """, (day_id, meal_id))
+
+
     connection.commit()
     connection.close()
+
+    return meal_id
 
 # Load a meal at meal_id
 def get_meal(connection, meal_id):
@@ -418,3 +427,26 @@ def get_days():
 
     return rows
 
+# Return food at food_id
+def get_food(connection, food_id):
+    cursor = connection.execute("""
+        SELECT *
+        FROM foods
+        WHERE id = ?
+    """, (food_id,))
+
+    row = cursor.fetchone()
+
+    return Food(row[1],row[2],row[3],row[4],row[5],row[0])
+
+# Add food to preexisting meal
+def add_food_to_meal(meal_id, food_id, quantity):
+    connection = get_connection()
+
+    cursor = connection.execute("""
+        INSERT INTO meal_foods (meal_id, food_id, quantity)
+        VALUES (?,?,?)
+    """, (meal_id,food_id,quantity))
+
+    connection.commit()
+    connection.close()

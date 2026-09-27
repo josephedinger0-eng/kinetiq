@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Add Food - Kinetiq</title>
+</head>
+
+<body>
+
+        <h1>Add Food</h1>
+
+        <form method = "POST">
+
+            <label for="food">Food:</label>
+
+            <select id="food" name="food_id">
+
+                    {% for food in foods %}
+                        <option value="{{ food.id}}">
+                            {{ food.name }}
+                        </option>
+                    {% endfor %}
+
+            </select>
+
+            <br><br>
+
+            <label for="quantity">Amount (g):</label>
+            <input type="number" id="quantity" name="quantity">
+
+            <br><br>
+
+            <button type="submit">Add Food</button>
+
+        </form>
+        
+</body>
+
+</html>
