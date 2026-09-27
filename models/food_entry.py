@@ -4,3 +4,8 @@ class FoodEntry:
     def __init__(self, food, quantity):
         self.food = food
         self.quantity= quantity
+
+    # Get the nutritrion for a food entry
+    @property
+    def nutrition(self):
+        return self.food.get_nutrition(self.quantity)

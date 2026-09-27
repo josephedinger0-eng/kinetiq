@@ -7,131 +7,144 @@ from models.exercise import Exercise
 from models.cardio_session import CardioSession
 from datetime import date
 
+# Create a connection for each thread
+def get_connection():
+    connection = sqlite3.connect("kinetiq.db") # Connect SQLite to the database
+    connection.execute("PRAGMA foreign_keys = ON") # Enable foreign keys
+    return connection
 
-connection = sqlite3.connect("kinetiq.db") # Connect SQLite to the database
-connection.execute("PRAGMA foreign_keys = ON") # Enable foreign keys
 
-# Create the foods table with values (columns) if it doesn't exist already
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS foods (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        kcal REAL NOT NULL,
-        protein REAL NOT NULL,
-        carbs REAL NOT NULL,
-        fat REAL NOT NULL    
-    )
-""")
+def initialize_database():
+    connection = get_connection()
+    # Create the foods table with values (columns) if it doesn't exist already
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS foods (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            kcal REAL NOT NULL,
+            protein REAL NOT NULL,
+            carbs REAL NOT NULL,
+            fat REAL NOT NULL    
+        )
+    """)
 
-# Create the meals table 
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS meals (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL    
-    )
-""")
+    # Create the meals table 
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS meals (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL    
+        )
+    """)
 
-# Create the meal_foods table 
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS meal_foods (
-        meal_id INTEGER NOT NULL,
-        food_id INTEGER NOT NULL,
-        quantity REAL NOT NULL,
-        FOREIGN KEY (meal_id) REFERENCES meals(id),   
-        FOREIGN KEY (food_id) REFERENCES foods(id)   
-    )
-""")
+    # Create the meal_foods table 
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS meal_foods (
+            meal_id INTEGER NOT NULL,
+            food_id INTEGER NOT NULL,
+            quantity REAL NOT NULL,
+            FOREIGN KEY (meal_id) REFERENCES meals(id),   
+            FOREIGN KEY (food_id) REFERENCES foods(id)   
+        )
+    """)
 
-# Create the days table
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS days (
-        id INTEGER PRIMARY KEY,
-        date TEXT NOT NULL
-    )
-""")
+    # Create the days table
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS days (
+            id INTEGER PRIMARY KEY,
+            date TEXT NOT NULL
+        )
+    """)
 
-# Create the day_meals table
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS day_meals (
-        day_id INTEGER NOT NULL,
-        meal_id INTEGER NOT NULL,
-        FOREIGN KEY (meal_id) REFERENCES meals(id),
-        FOREIGN KEY (day_id) REFERENCES days(id)
-    )
-""")
+    # Create the day_meals table
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS day_meals (
+            day_id INTEGER NOT NULL,
+            meal_id INTEGER NOT NULL,
+            FOREIGN KEY (meal_id) REFERENCES meals(id),
+            FOREIGN KEY (day_id) REFERENCES days(id)
+        )
+    """)
 
-# Create the workouts table
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS workouts (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL
-    )
-""")
+    # Create the workouts table
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS workouts (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL
+        )
+    """)
 
-# Create the exercises table
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS exercises (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        workout_id INTEGER NOT NULL,
-        FOREIGN KEY (workout_id) REFERENCES workouts(id)
-    )
-""")
+    # Create the exercises table
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS exercises (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            workout_id INTEGER NOT NULL,
+            FOREIGN KEY (workout_id) REFERENCES workouts(id)
+        )
+    """)
 
-# Create the sets table
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS sets (
-        id INTEGER PRIMARY KEY,
-        exercise_id INTEGER NOT NULL,
-        reps INTEGER NOT NULL,
-        weight REAL NOT NULL,
-        FOREIGN KEY (exercise_id) REFERENCES exercises(id)
-    )
-""")
+    # Create the sets table
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS sets (
+            id INTEGER PRIMARY KEY,
+            exercise_id INTEGER NOT NULL,
+            reps INTEGER NOT NULL,
+            weight REAL NOT NULL,
+            FOREIGN KEY (exercise_id) REFERENCES exercises(id)
+        )
+    """)
 
-# Create the day_workouts table
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS day_workouts (
-        day_id INTEGER NOT NULL,
-        workout_id INTEGER NOT NULL,
-        FOREIGN KEY (day_id) REFERENCES days(id),
-        FOREIGN KEY (workout_id) REFERENCES workouts(id)
-    )
-""")
+    # Create the day_workouts table
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS day_workouts (
+            day_id INTEGER NOT NULL,
+            workout_id INTEGER NOT NULL,
+            FOREIGN KEY (day_id) REFERENCES days(id),
+            FOREIGN KEY (workout_id) REFERENCES workouts(id)
+        )
+    """)
 
-# Create the cardio_sessions table
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS cardio_sessions (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        distance REAL NOT NULL,
-        duration REAL NOT NULL
-    )
-""")
+    # Create the cardio_sessions table
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS cardio_sessions (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            distance REAL NOT NULL,
+            duration REAL NOT NULL
+        )
+    """)
 
-# Create the day_cardio table
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS day_cardio (
-        day_id INTEGER NOT NULL,
-        cardio_id INTEGER NOT NULL,
-        FOREIGN KEY (day_id) REFERENCES days(id),
-        FOREIGN KEY (cardio_id) REFERENCES cardio_sessions(id)
-    )
-""")
+    # Create the day_cardio table
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS day_cardio (
+            day_id INTEGER NOT NULL,
+            cardio_id INTEGER NOT NULL,
+            FOREIGN KEY (day_id) REFERENCES days(id),
+            FOREIGN KEY (cardio_id) REFERENCES cardio_sessions(id)
+        )
+    """)
 
-connection.commit()
+    connection.commit()
+    connection.close()
+
+initialize_database()
 
 # Save a food object into the foods database
 def save_food(food):
+    connection = get_connection()
+
     connection.execute("""
         INSERT INTO foods (name, kcal, protein, carbs, fat)
         VALUES (?,?,?,?,?)
     """, (food.name, food.kcal, food.pro, food.carb, food.fat))
 
     connection.commit()
+    connection.close()
 
 # Load a food from the database
 def get_foods():
+    connection = get_connection()
+
     cursor = connection.execute("SELECT * FROM foods")
     rows = cursor.fetchall()
 
@@ -141,10 +154,13 @@ def get_foods():
         food = Food(row[1], row[2], row[3], row[4], row[5], row[0])
         foods.append(food)
 
+    connection.close()
     return foods
 
 # Save meals to the table
 def save_meal(meal):
+    connection = get_connection()
+
     cursor = connection.execute("""
         INSERT INTO meals (name)
         VALUES (?)
@@ -160,9 +176,11 @@ def save_meal(meal):
         """, (meal_id, entry.food.id, entry.quantity))
 
     connection.commit()
+    connection.close()
 
 # Load a meal at meal_id
-def get_meal(meal_id):
+def get_meal(connection, meal_id):
+
     cursor = connection.execute("""
         SELECT name
         FROM meals
@@ -196,11 +214,12 @@ def get_meal(meal_id):
 
         meal.add_food(food, quantity)
         
-
     return meal
 
 # Save days into the date table, return the ID of the day
 def save_day(day):
+    connection = get_connection()
+
     cursor = connection.execute("""
         INSERT INTO days (date)
         VALUES (?)
@@ -231,11 +250,12 @@ def save_day(day):
         """, (day_id, cardio_id))
 
     connection.commit()
-
+    connection.close()
     return day_id
 
 # Load a day at day_id
-def get_day(day_id):
+def get_day(connection, day_id):
+    
     cursor = connection.execute("""
         SELECT date
         FROM days
@@ -255,7 +275,7 @@ def get_day(day_id):
     rows = cursor.fetchall()
     for row in rows:
         meal_id = row[0]
-        meal = get_meal(meal_id)
+        meal = get_meal(connection, meal_id)
         day.add_meal(meal)
 
     cursor = connection.execute("""
@@ -267,7 +287,7 @@ def get_day(day_id):
     rows = cursor.fetchall()
     for row in rows:
         workout_id = row[0]
-        workout = get_workout(workout_id)
+        workout = get_workout(connection, workout_id)
         day.add_workout(workout)
 
     cursor = connection.execute("""
@@ -279,13 +299,15 @@ def get_day(day_id):
     rows = cursor.fetchall()
     for row in rows:
         cardio_id = row[0]
-        cardio_session = get_cardio(cardio_id)
+        cardio_session = get_cardio(connection, cardio_id)
         day.add_cardio(cardio_session)
 
     return day
 
 # Save workouts to workouts table
 def save_workout(workout):
+    connection = get_connection()
+
     cursor = connection.execute("""
         INSERT INTO workouts (name)
         VALUES (?)
@@ -309,10 +331,12 @@ def save_workout(workout):
             """, (exercise_id, reps, weight))
 
     connection.commit()
+    connection.close()
     return workout_id
 
 # Load a workout at workout_id
-def get_workout(workout_id):
+def get_workout(connection, workout_id):
+
     cursor = connection.execute("""
         SELECT name 
         FROM workouts
@@ -353,6 +377,8 @@ def get_workout(workout_id):
 
 # Save a cardio session
 def save_cardio(cardio):
+    connection = get_connection()
+
     cursor = connection.execute("""
         INSERT INTO cardio_sessions (name, distance, duration)
         VALUES (?, ?, ?)
@@ -360,10 +386,12 @@ def save_cardio(cardio):
 
     cardio_id = cursor.lastrowid
 
+    connection.close()
     return cardio_id
 
 # Load a cardio session
-def get_cardio(cardio_id):
+def get_cardio(connection, cardio_id):
+
     cursor = connection.execute("""
         SELECT name, distance, duration
         FROM cardio_sessions
@@ -375,4 +403,18 @@ def get_cardio(cardio_id):
 
     return cardio_session
 
+# Return all days in descending order
+def get_days():
+    connection = get_connection()
+
+    cursor = connection.execute("""
+        SELECT id, date
+        FROM days
+        ORDER BY date DESC
+    """)
+
+    rows = cursor.fetchall()
+    connection.close()
+
+    return rows
 

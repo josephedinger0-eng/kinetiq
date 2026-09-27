@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Kinetiq</title>
+</head>
+
+<body>
+
+    <header>
+        <h1>Kinetiq</h1>
+        <p>Nutrition & Training Dashboard</p>
+    </header>
+
+    <main>
+        <h2>My Days</h2>
+
+        {% for day in days %}
+            <div class = "day">
+                <a href="{{ url_for('day_page', day_id=day[0]) }}">
+                    {{ day[1] }}
+                </a>
+            </div>
+        {% endfor %}
+    </main>
+    
+</body>
+
+</html>

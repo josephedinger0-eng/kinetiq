@@ -12,10 +12,10 @@ class Food:
     # Calculate the nutrients of food in amount quantity
     def get_nutrition(self, quantity):
         multiplier = quantity / 100
-        return {"kcal": self.kcal * multiplier,
-                "pro": self.pro * multiplier,
-                "carb": self.carb * multiplier,
-                "fat": self.fat * multiplier
+        return {"kcal": round(self.kcal * multiplier, 2),
+                "pro": round(self.pro * multiplier, 2),
+                "carb": round(self.carb * multiplier, 2),
+                "fat": round(self.fat * multiplier, 2)
         }
 
     # str method to return the qualities of a food
