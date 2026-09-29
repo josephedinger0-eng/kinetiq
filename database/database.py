@@ -135,13 +135,17 @@ initialize_database()
 def save_food(food):
     connection = get_connection()
 
-    connection.execute("""
+    cursor = connection.execute("""
         INSERT INTO foods (name, kcal, protein, carbs, fat)
         VALUES (?,?,?,?,?)
     """, (food.name, food.kcal, food.pro, food.carb, food.fat))
 
+    food.id = cursor.lastrowid
+
     connection.commit()
     connection.close()
+
+    return food.id
 
 # Load foods from the database
 def get_foods():

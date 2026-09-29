@@ -281,6 +281,15 @@ header h1 {
     gap: 15px;
 }
 
+.food-result {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.food-result:hover {
+    background-color: #eee;
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 800px) {

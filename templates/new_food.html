@@ -8,39 +8,90 @@
 
 <body>
 
-        <h1>Add Food</h1>
+        <h2>Add Food</h2>
 
-        <form method = "POST">
+        <form method="POST">
 
-            <label for="food">Food:</label>
+            <div class="food-search">
 
-            <select id="food" name="food_id">
+                <label for="food-search">Search for a food</label>
+                <input
+                    type="text"
+                    id="food-search"
+                    placeholder="Start typing..."
+                    autocomplete="off"
+                >
 
-                    {% for food in foods %}
-                        <option value="{{ food.id}}">
-                            {{ food.name }}
-                        </option>
-                    {% endfor %}
+                <input
+                    type="hidden"
+                    id="food_id"
+                    name="food_id"
+                >
 
-            </select>
+                <div id="search-results"></div>
 
-            <br><br>
+            </div>
 
-            <label for="quantity">Amount (g):</label>
-            <input type="number"
-                id="quantity"
-                name="quantity"
-                min="0.1"
-                step="0.1"
-                required
-            >
+                <br><br>
 
-            <br><br>
+                <label for="quantity">Amount (g):</label>
+                <input type="number"
+                    id="quantity"
+                    name="quantity"
+                    min="0.1"
+                    step="0.1"
+                    required
+                >
 
-            <button type="submit">Add Food</button>
+                <br><br>
+
+                <button type="submit">Add Food</button>
 
         </form>
 
 </body>
 
 </html>
+
+<script>
+const searchInput = document.getElementById("food-search");
+const resultsContainer = document.getElementById("search-results");
+
+let searchTimeout;
+
+searchInput.addEventListener("input", function () {
+    const query = searchInput.value.trim();
+
+    clearTimeout(searchTimeout)
+
+    if (query.length < 3) {
+        resultsContainer.innerHTML = "";
+        return;
+    }
+
+    searchTimeout = setTimeout(async function () {
+        const response = await fetch(
+            `/api/foods/search?q=${encodeURIComponent(query)}`
+        );
+
+        const data = await response.json();
+
+        resultsContainer.innerHTML = "";
+
+        for (const food of data.foods) {
+            const result = document.createElement("div");
+
+            result.className = "food-result";
+            result.textContent = food.description;
+
+            result.addEventListener("click", function () {
+                searchInput.value = food.description;
+                document.getElementById("food_id").value = food.fdc_id;
+                resultsContainer.innerHTML = "";
+            });
+
+            resultsContainer.appendChild(result);
+        }
+    }, 300)
+});
+</script>

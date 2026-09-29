@@ -3,6 +3,8 @@ from database.database import *
 from models.day import Day
 from models.meal import Meal
 from datetime import date
+from nutrition.usda_api import create_food_from_usda, create_food_from_local_data
+from nutrition.autocomplete import autocomplete
 
 app = Flask(__name__)
 
@@ -60,17 +62,23 @@ def new_meal(day_id):
 # Add a food entry to a meal
 @app.route("/day/<int:day_id>/meal/<int:meal_id>/food/new", methods=["GET", "POST"])
 def new_food(day_id, meal_id):
-    foods = get_foods()
 
     if request.method == "POST":
-        food_id = request.form["food_id"]
+        fdc_id = int(request.form["food_id"])
         quantity = float(request.form["quantity"])
 
-        add_food_to_meal(meal_id, food_id, quantity)
+        food = create_food_from_local_data(fdc_id)
+        save_food(food)
+
+        add_food_to_meal(meal_id, food.id, quantity)
 
         return redirect(url_for("day_page", day_id=day_id))
 
-    return render_template("new_food.html", day_id=day_id, meal_id=meal_id,foods=foods)
+    return render_template(
+        "new_food.html",
+        day_id=day_id,
+        meal_id=meal_id
+    )
 
 # Display yesterday's information
 @app.route("/day/<int:day_id>/previous")
@@ -119,6 +127,19 @@ def edit_food(day_id, meal_id, entry_id):
         return redirect(url_for("day_page", day_id=day_id))
 
     return render_template("edit_food.html", day_id=day_id, meal_id=meal_id, entry_id=entry_id)
+
+# Search Local USDA food dataset
+@app.route("/api/foods/search")
+def search_foods_api():
+    query = request.args.get("q", "").strip()
+
+    if len(query) < 3:
+        return {"foods": []}
+
+    results = autocomplete(query, limit=15)
+
+    return {"foods": results}
+
 # Display the about section
 @app.route("/about")
 def about():
