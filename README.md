@@ -90,4 +90,101 @@ kinetiq/
 │   └── kinetiq_foods.csv
 ├── app.py
 ├── .gitignore
+└── README.md
 ```
+
+## Architecture
+
+Kinetiq separates application responsibilities into several layers:
+
+**Models** represent the application's core objects:
+
+```text
+Day
+├── Meals
+│   └── Food Entries
+│       └── Food
+├── Workouts
+│   └── Exercises
+│       └── Sets
+└── Cardio Sessions
+```
+
+**Database functions** handle persistent storage in SQLite.
+
+**Nutrition modules** handle USDA data processing, food searching, and food creation.
+
+**Flask routes and templates** provide the web interface.
+
+## Data Persistence
+
+Kinetiq uses SQLite to store application data.
+
+The database uses relational tables for foods, meals, food entries, days, workouts, exercises, sets, and cardio sessions. Foreign keys are used to connect related records.
+
+The USDA dataset is not loaded directly every time the application starts. Instead, `process_usda.py` converts the relevant USDA data into a smaller processed dataset that Kinetiq can load efficiently.
+
+## Development Goals
+
+Kinetiq is being developed incrementally to expand both its functionality and software architecture.
+
+### Implemented
+
+* [x] Python data models
+* [x] Flask web application
+* [x] SQLite persistence
+* [x] Nutrition tracking
+* [x] Meal and food-entry system
+* [x] Workout and exercise tracking
+* [x] Set and training-volume tracking
+* [x] Cardio tracking
+* [x] USDA Foundation Food integration
+* [x] Food autocomplete
+* [x] USDA data preprocessing
+* [x] In-memory food database
+
+### In Development
+
+* [ ] Improved editing and deletion workflows
+* [ ] Expanded training analytics
+* [ ] Expanded nutrition analytics
+* [ ] Improved user interface
+* [ ] Automated testing
+
+### Planned
+
+* [ ] Micronutrient tracking
+* [ ] Historical nutrition and training analysis
+* [ ] Data visualization
+* [ ] Additional USDA food data
+* [ ] More advanced analytics
+
+## Project Goals
+
+Kinetiq is also a learning project focused on building practical software with Python.
+
+The project provides experience with:
+
+* Object-oriented programming
+* Relational database design
+* SQL and foreign keys
+* Flask web development
+* REST API integration
+* CSV data processing
+* Data validation and preprocessing
+* Application architecture
+* Git and GitHub
+
+## Status
+
+**Active development**
+
+Kinetiq currently has a functional Flask application with persistent SQLite storage, nutrition and training models, and an integrated USDA Foundation Foods database.
+
+The project is being expanded incrementally as new features and analytics are developed.
+
+## Author
+
+**Joseph Edinger**
+
+GitHub: [josephedinger0-eng](https://github.com/josephedinger0-eng)
