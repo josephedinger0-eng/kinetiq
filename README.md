@@ -2,59 +2,92 @@
 
 **Personal nutrition and training analytics platform built with Python.**
 
-Kinetiq is a personal project designed to track nutrition, workouts, and long-term performance data in one place. The project will start as a Python application and gradually expand as new features and technologies are introduced.
+Kinetiq is a web-based application for organizing nutrition and training data in one place. The project is being developed as a long-term Python software project, with an emphasis on data modeling, persistence, external data integration, and analytics.
 
-## Features
+## Current Features
 
 ### Nutrition
 
-* Food and meal logging
-* Calorie tracking
-* Macronutrient tracking
-* Micronutrient tracking
-* Food database integration
-* Custom foods and recipes
+* Create and store foods with nutritional information
+* Search for foods using autocomplete
+* Import validated food data from the USDA FoodData Central Foundation Foods dataset
+* Add foods to meals with a specified quantity
+* Calculate meal nutrition totals
+* Track calories, protein, carbohydrates, and fat
 
 ### Training
 
-* Strength workout logging
-* Exercise and set tracking
-* Weight and repetition tracking
-* Cardio workout logging
-* Workout history
+* Create workouts
+* Add exercises to workouts
+* Record sets, repetitions, and weight
+* Calculate training volume
+* Record cardio sessions with distance and duration
 
-### Analytics
+### Daily Tracking
 
-* Daily and weekly nutrition summaries
-* Nutrient trends
-* Workout history and progression
-* Training volume and frequency
-* Long-term performance analysis
+* Organize meals, workouts, and cardio sessions by date
+* View the nutrition and training information associated with a day
+* Persist data using SQLite
 
-## Technology
+### USDA Food Data Integration
 
-Currently built with:
+Kinetiq uses USDA FoodData Central data to provide a searchable food database.
 
-* **Python**
-* **Git & GitHub**
-* **Visual Studio Code**
+The USDA dataset is processed before being used by the application:
 
-Planned technologies as the project grows:
+```text
+USDA Foundation Food Dataset
+            ↓
+     process_usda.py
+            ↓
+  Validated food dataset
+            ↓
+    kinetiq_foods.csv
+            ↓
+     In-memory database
+            ↓
+Autocomplete + Food Creation
+```
 
-* SQLite
-* USDA FoodData Central API
-* Data visualization
-* Automated testing
-* Flask
-* HTML/CSS/JavaScript
+Only Foundation Foods containing the required macronutrient and energy data are included in the processed dataset.
 
-## Project Goals
+The preprocessing step currently produces approximately 322 complete Foundation Foods.
 
-Kinetiq is being developed incrementally rather than as a single finished application. The goal is to use the project to develop practical software engineering skills while creating something that can actually be used.
+## Technology Stack
 
-The project will progress through several stages:
+* **Python** — application logic and data processing
+* **Flask** — web application framework
+* **SQLite** — persistent relational database
+* **HTML / CSS / JavaScript** — web interface
+* **USDA FoodData Central** — food and nutrition data
+* **Requests** — USDA API communication
+* **python-dotenv** — environment variable management
 
-1. Build the core Python application
-2. Implement nutrition and workout tracking
-3. Add persistent data storage
-4. Integrate USDA FoodData Central
+## Project Structure
+
+```text
+kinetiq/
+├── database/
+│   └── database.py
+├── models/
+│   ├── food.py
+│   ├── food_entry.py
+│   ├── meal.py
+│   ├── day.py
+│   ├── workout.py
+│   ├── exercise.py
+│   └── cardio_session.py
+├── nutrition/
+│   ├── autocomplete.py
+│   ├── food_database.py
+│   ├── process_usda.py
+│   └── usda_api.py
+├── static/
+│   └── style.css
+├── templates/
+│   └── ...
+├── data/
+│   └── kinetiq_foods.csv
+├── app.py
+├── .gitignore
+```
