@@ -3,7 +3,7 @@ from database.database import *
 from models.day import Day
 from models.meal import Meal
 from datetime import date
-from nutrition.usda_api import create_food_from_usda, create_food_from_local_data
+from nutrition.usda_api import create_food_from_local_data
 from nutrition.autocomplete import autocomplete
 
 app = Flask(__name__)

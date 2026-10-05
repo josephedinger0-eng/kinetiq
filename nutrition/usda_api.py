@@ -2,7 +2,7 @@ import os
 import requests
 from dotenv import load_dotenv
 from models.food import Food
-import csv
+from nutrition.food_database import FOODS
 
 load_dotenv()
 
@@ -97,56 +97,21 @@ def create_food_from_usda(fdc_id):
 
 # Create a food object from local data
 def create_food_from_local_data(fdc_id):
-    name = None
+    fdc_id = str(fdc_id)
 
-    # Find the food's name
-    with open(FOODS_FILE, newline="", encoding="utf-8") as file:
-        reader = csv.DictReader(file)
-
-        for row in reader:
-            if row["fdc_id"] == str(fdc_id):
-                name = row["description"]
-                break
-
-    if name is None:
+    if fdc_id not in FOODS:
         raise ValueError(f"Food {fdc_id} was not found.")
 
-    kcal = None
-    pro = None
-    carb = None
-    fat = None
+    food_data = FOODS[fdc_id]
 
-    # Find the food's nutrient values
-    with open(NUTRIENTS_FILE, newline="", encoding="utf-8") as file:
-        reader = csv.DictReader(file)
-
-        for row in reader:
-            if row["fdc_id"] != str(fdc_id):
-                continue
-
-            nutrient_id = int(row["nutrient_id"])
-            amount = row["amount"]
-
-            if amount == "":
-                continue
-
-            amount = float(amount)
-
-            if nutrient_id in ENERGY_IDS and kcal is None:
-                kcal = amount
-            elif nutrient_id == 1003:
-                pro = amount
-            elif nutrient_id == 1004:
-                fat = amount
-            elif nutrient_id == 1005:
-                carb = amount
-
-    if kcal is None or pro is None or carb is None or fat is None:
-        raise ValueError(
-            f"Food {fdc_id} does not have complete nutrition data."
-        )
-
-    return Food(name, kcal, pro, carb, fat)
+    return Food(
+        food_data["description"],
+        food_data["kcal"],
+        food_data["protein"],
+        food_data["carbs"],
+        food_data["fat"],
+        fdc_id
+    )
 
 # Rerank results by our relevance
 def score_food(food, query):
