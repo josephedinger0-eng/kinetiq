@@ -41,22 +41,22 @@
 
             <div class="nutrition-card">
                 <h3>Calories</h3>
-                <p>{{ day.get_meal_totals()["kcal"] }}</p>
+                <p>{{ day.get_meal_totals()["kcal"]|round(0) }}</p>
             </div>
 
             <div class="nutrition-card">
                 <h3>Protein</h3>
-                <p>{{ day.get_meal_totals()["pro"] }}g</p>
+                <p>{{ day.get_meal_totals()["pro"]|round(1) }}g</p>
             </div>
 
             <div class="nutrition-card">
                 <h3>Carbs</h3>
-                <p>{{ day.get_meal_totals()["carb"] }}g</p>
+                <p>{{ day.get_meal_totals()["carb"]|round(1) }}g</p>
             </div>
 
             <div class="nutrition-card">
                 <h3>Fat</h3>
-                <p>{{ day.get_meal_totals()["fat"] }}g</p>
+                <p>{{ day.get_meal_totals()["fat"]|round(1) }}g</p>
             </div>
 
     </div>
@@ -72,7 +72,7 @@
             <h2>Meals</h2>
 
             <a class="button" href="{{ url_for('new_meal', day_id=day.id) }}">
-            + Add Meal
+                + Add Custom Meal
             </a>
 
         </div>
@@ -80,71 +80,119 @@
         {% for meal in day.meals %}
 
             <div class="meal">
+
                 <div class="meal-header">
 
                     <h3>{{ meal.name }}</h3>
 
                     <a class="small-button"
-                        href="{{ url_for('new_food', day_id=day.id, meal_id=meal.id) }}">
+                    href="{{ url_for('new_food',
+                                        day_id=day.id,
+                                        meal_id=meal.id) }}">
                         + Add Food
                     </a>
 
-                    <form method="POST" 
-                        action="{{ url_for('delete_meal_route',
-                        day_id=day.id,
-                        meal_id=meal.id) }}">
-
-                        <button class="delete-button" type="submit">
-                            Delete Meal
-                        </button>
-
-                    </form>
-
-                </div>
-            </div>
-
-            {% for entry in meal.entries %}
-            <div class="food-entry">
-
-                <div class="food-header">
-                    <h4>{{ entry.food.name }} - {{ entry.quantity }}g</h4>
-
-                    <div class="food-actions">
-                        <a class="small-button"
-                        href="{{ url_for('edit_food', day_id=day.id, meal_id=meal.id, entry_id=entry.id) }}">
-                            Edit
-                        </a>
-
-                        <form method="POST"
-                            action="{{ url_for('delete_food', day_id=day.id, meal_id=meal.id, entry_id=entry.id) }}">
-                            <button class="delete-button" type="submit">
-                                Delete
-                            </button>
-                        </form>
-                    </div>
                 </div>
 
-                <p>Calories: {{ entry.nutrition["kcal"] }}</p>
-                <p>Protein: {{ entry.nutrition["pro"] }}g</p>
-                <p>Carbohydrates: {{ entry.nutrition["carb"] }}g</p>
-                <p>Fat: {{ entry.nutrition["fat"] }}g</p>
+                {% if meal.entries %}
 
-                </div>
-                {% endfor %}
+                    {% for entry in meal.entries %}
+
+                        <div class="food-entry">
+
+                            <div class="food-header">
+
+                                <h4>
+                                    {{ entry.food.name }}
+                                    <span>{{ entry.quantity }}g</span>
+                                </h4>
+
+                                <div class="food-actions">
+
+                                    <a class="small-button"
+                                    href="{{ url_for('edit_food',
+                                                        day_id=day.id,
+                                                        meal_id=meal.id,
+                                                        entry_id=entry.id) }}">
+                                        Edit
+                                    </a>
+
+                                    <form method="POST"
+                                        action="{{ url_for('delete_food',
+                                                            day_id=day.id,
+                                                            meal_id=meal.id,
+                                                            entry_id=entry.id) }}">
+
+                                        <button class="delete-button" type="submit">
+                                            Delete
+                                        </button>
+
+                                    </form>
+
+                                </div>
+
+                            </div>
+
+                            <div class="food-nutrition">
+
+                                <span>
+                                    {{ entry.nutrition["kcal"]|round(0) }} kcal
+                                </span>
+
+                                <span>
+                                    {{ entry.nutrition["pro"]|round(1) }}g protein
+                                </span>
+
+                                <span>
+                                    {{ entry.nutrition["carb"]|round(1) }}g carbs
+                                </span>
+
+                                <span>
+                                    {{ entry.nutrition["fat"]|round(1) }}g fat
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <p class="empty-meal">
+                        No foods added yet.
+                    </p>
+
+                {% endif %}
 
                 <div class="meal-total">
+
                     <h4>Meal Total</h4>
 
-                    <p>Calories: {{ meal.get_meal_totals()["kcal"] }}</p>
-                    <p>Protein: {{ meal.get_meal_totals()["pro"] }}g</p>
-                    <p>Carbs: {{ meal.get_meal_totals()["carb"] }}g</p>
-                    <p>Fat: {{ meal.get_meal_totals()["fat"] }}g</p>
+                    <div class="food-nutrition">
+
+                        <span>
+                            {{ meal.get_meal_totals()["kcal"]|round(0) }} kcal
+                        </span>
+
+                        <span>
+                            {{ meal.get_meal_totals()["pro"]|round(1) }}g protein
+                        </span>
+
+                        <span>
+                            {{ meal.get_meal_totals()["carb"]|round(1) }}g carbs
+                        </span>
+
+                        <span>
+                            {{ meal.get_meal_totals()["fat"]|round(1) }}g fat
+                        </span>
+
+                    </div>
+
                 </div>
 
-                <br><br>
-
             </div>
-            
+
         {% endfor %}
 
     </section>

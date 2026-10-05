@@ -95,10 +95,10 @@ def create_processed_foods(food_names, nutrition):
         foods.append({
             "fdc_id": fdc_id,
             "description": food_names[fdc_id],
-            "kcal": food_nutrition["kcal"],
-            "pro": food_nutrition["pro"],
-            "carb": food_nutrition["carb"],
-            "fat": food_nutrition["fat"]
+            "kcal": max(0, food_nutrition["kcal"]),
+            "pro": max(0, food_nutrition["pro"]),
+            "carb": max(0, food_nutrition["carb"]),
+            "fat": max(0, food_nutrition["fat"])
         })
 
     return foods

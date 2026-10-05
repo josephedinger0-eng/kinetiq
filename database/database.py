@@ -236,9 +236,18 @@ def save_day(day):
     day_id = cursor.lastrowid
 
     for meal in day.meals:
+
+        if meal.id is None:
+            cursor = connection.execute("""
+                INSERT INTO meals (name)
+                VALUES (?)
+            """, (meal.name,))
+
+            meal.id = cursor.lastrowid
+
         connection.execute("""
-            INSERT INTO day_meals 
-            VALUES (?,?)
+            INSERT INTO day_meals (day_id, meal_id)
+            VALUES (?, ?)
         """, (day_id, meal.id))
 
     for workout in day.workouts:
@@ -531,6 +540,23 @@ def get_or_create_day(day_date):
     """, (day_date,))
 
     day_id = cursor.lastrowid
+
+    # Create the default meals
+    default_meals = ["Breakfast", "Lunch", "Dinner", "Snacks"]
+
+    for meal_name in default_meals:
+
+        cursor = connection.execute("""
+            INSERT INTO meals (name)
+            VALUES (?)
+        """, (meal_name,))
+
+        meal_id = cursor.lastrowid
+
+        connection.execute("""
+            INSERT INTO day_meals (day_id, meal_id)
+            VALUES (?, ?)
+        """, (day_id, meal_id))
 
     connection.commit()
     connection.close()

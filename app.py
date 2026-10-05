@@ -27,9 +27,17 @@ def days():
 # Display the day creation page
 @app.route("/day/new", methods=["GET", "POST"])
 def new_day():
+
     if request.method == "POST":
         day_date = request.form["date"]
+
         day = Day(day_date)
+
+        day.add_meal(Meal("Breakfast"))
+        day.add_meal(Meal("Lunch"))
+        day.add_meal(Meal("Dinner"))
+        day.add_meal(Meal("Snacks"))
+
         day_id = save_day(day)
 
         return redirect(url_for("day_page",day_id=day_id))
