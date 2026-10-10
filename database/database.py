@@ -490,6 +490,9 @@ def delete_food_entry(entry_id):
         WHERE id = ?
     """, (entry_id,))
 
+    connection.commit()
+    connection.close()
+
 # Modify an exisiting food_entry
 def update_food_entry(entry_id, quantity):
     connection = get_connection()

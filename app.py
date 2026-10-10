@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from database.database import *
 from models.day import Day
 from models.meal import Meal
@@ -54,33 +54,57 @@ def day_page(day_id):
     return render_template("home.html", day=day)
 
 # Create a new meal in a day
-@app.route("/day/<int:day_id>/meal/new", methods=["GET","POST"])
+@app.route("/day/<int:day_id>/meal/new", methods=["GET", "POST"])
 def new_meal(day_id):
 
     if request.method == "POST":
-        meal_name = request.form["name"]
+        meal_name = request.form["name"].strip()
+
+        if not meal_name:
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({"error": "Please enter a meal name."}), 400
+
+            return redirect(url_for("new_meal", day_id=day_id))
+
         meal = Meal(meal_name)
         save_meal(meal, day_id)
 
-        return redirect(url_for("day_page",day_id=day_id))
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"success": True, "meal_id": meal.id})
 
+        return redirect(url_for("day_page", day_id=day_id))
 
-    return render_template("new_meal.html",day_id=day_id)
+    return render_template("new_meal.html", day_id=day_id)
 
 # Add a food entry to a meal
 @app.route("/day/<int:day_id>/meal/<int:meal_id>/food/new", methods=["GET", "POST"])
 def new_food(day_id, meal_id):
 
     if request.method == "POST":
-        fdc_id = int(request.form["food_id"])
-        quantity = float(request.form["quantity"])
+        try:
+            fdc_id = int(request.form["food_id"])
+            quantity = float(request.form["quantity"])
 
-        food = create_food_from_local_data(fdc_id)
-        save_food(food)
+            if quantity <= 0:
+                raise ValueError("Quantity must be greater than zero.")
 
-        add_food_to_meal(meal_id, food.id, quantity)
+            food = create_food_from_local_data(fdc_id)
+            save_food(food)
 
-        return redirect(url_for("day_page", day_id=day_id))
+            add_food_to_meal(meal_id, food.id, quantity)
+
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({"success": True})
+
+            return redirect(url_for("day_page", day_id=day_id))
+
+        except (ValueError, KeyError):
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({
+                    "error": "Choose a food and enter a valid quantity."
+                }), 400
+
+            return redirect(url_for("day_page", day_id=day_id))
 
     return render_template(
         "new_food.html",

@@ -290,6 +290,62 @@ header h1 {
     background-color: #eee;
 }
 
+.inline-food-form {
+    margin-top: 12px;
+    padding: 16px;
+    border: 1px solid #d9dfe5;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.inline-food-form form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.inline-food-form input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+}
+
+.food-results {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.food-result {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+}
+
+.food-result:hover {
+    background: #eaf2ff;
+}
+
+.selected-food {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.food-form-message {
+    margin: 0;
+    color: #b42318;
+    font-size: 0.9rem;
+}
+
+.inline-food-form [hidden] {
+    display: none;
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 800px) {
