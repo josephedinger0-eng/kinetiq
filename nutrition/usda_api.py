@@ -93,7 +93,7 @@ def create_food_from_usda(fdc_id):
                 f"USDA food is missing required nutrient: {nutrient_name}"
             )
     
-    return Food(name, kcal, pro, carb, fat, fdc_id)
+    return Food(name, kcal, pro, carb, fat, fdc_id=fdc_id)
 
 # Create a food object from local data
 def create_food_from_local_data(fdc_id):
@@ -110,7 +110,7 @@ def create_food_from_local_data(fdc_id):
         food_data["protein"],
         food_data["carbs"],
         food_data["fat"],
-        fdc_id
+        fdc_id = fdc_id
     )
 
 # Rerank results by our relevance

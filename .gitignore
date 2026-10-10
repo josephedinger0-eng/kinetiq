@@ -222,6 +222,3 @@ main.py
 
 # Database
 kinetiq.db
-
-# .env
-.env

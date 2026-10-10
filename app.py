@@ -149,16 +149,40 @@ def delete_food(day_id, meal_id, entry_id):
     return redirect(url_for("day_page", day_id=day_id))
 
 # Edit an existing fodo_entry
-@app.route("/day/<int:day_id>/meal/<int:meal_id>/food/<int:entry_id>/edit", methods=["GET","POST"])
+
+@app.route(
+    "/day/<int:day_id>/meal/<int:meal_id>/food/<int:entry_id>/edit",
+    methods=["GET", "POST"]
+)
 def edit_food(day_id, meal_id, entry_id):
     if request.method == "POST":
-        quantity = float(request.form["quantity"])
+        try:
+            quantity = float(request.form["quantity"])
+
+            if not 0 < quantity < float("inf"):
+                raise ValueError
+
+        except (ValueError, KeyError):
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({
+                    "error": "Enter a valid quantity greater than zero."
+                }), 400
+
+            return "Invalid quantity. Enter a number greater than zero.", 400
 
         update_food_entry(entry_id, quantity)
 
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"success": True})
+
         return redirect(url_for("day_page", day_id=day_id))
 
-    return render_template("edit_food.html", day_id=day_id, meal_id=meal_id, entry_id=entry_id)
+    return render_template(
+        "edit_food.html",
+        day_id=day_id,
+        meal_id=meal_id,
+        entry_id=entry_id
+    )
 
 # Search Local USDA food dataset
 @app.route("/api/foods/search")

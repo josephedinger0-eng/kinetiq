@@ -554,14 +554,20 @@ document.querySelectorAll(".food-entry").forEach((entry) => {
         try {
             const response = await fetch(form.action, {
                 method: "POST",
-                body: new FormData(form)
+                body: new FormData(form),
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error("Could not update the food quantity.");
+                throw new Error(data.error || "Could not update the food quantity.");
             }
 
             window.location.reload();
+
         } catch (error) {
             message.textContent = error.message;
             saveButton.disabled = false;

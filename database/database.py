@@ -21,6 +21,7 @@ def initialize_database():
     connection.execute("""
         CREATE TABLE IF NOT EXISTS foods (
             id INTEGER PRIMARY KEY,
+            fdc_id TEXT,
             name TEXT NOT NULL,
             kcal REAL NOT NULL,
             protein REAL NOT NULL,
@@ -135,29 +136,68 @@ initialize_database()
 def save_food(food):
     connection = get_connection()
 
-    cursor = connection.execute("""
-        INSERT INTO foods (name, kcal, protein, carbs, fat)
-        VALUES (?,?,?,?,?)
-    """, (food.name, food.kcal, food.pro, food.carb, food.fat))
+    try:
+        # Check whether this USDA food is already saved.
+        if food.fdc_id is not None:
+            cursor = connection.execute("""
+                SELECT id
+                FROM foods
+                WHERE fdc_id = ?
+            """, (str(food.fdc_id),))
 
-    food.id = cursor.lastrowid
+            row = cursor.fetchone()
 
-    connection.commit()
-    connection.close()
+            if row:
+                food.id = row[0]
+                return food.id
 
-    return food.id
+        # Save a new food if it doesn't already exist.
+        cursor = connection.execute("""
+            INSERT INTO foods (
+                fdc_id, name, kcal, protein, carbs, fat
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            str(food.fdc_id) if food.fdc_id is not None else None,
+            food.name,
+            food.kcal,
+            food.pro,
+            food.carb,
+            food.fat
+        ))
+
+        food.id = cursor.lastrowid
+        connection.commit()
+
+        return food.id
+
+    finally:
+        connection.close()
 
 # Load foods from the database
 def get_foods():
     connection = get_connection()
 
-    cursor = connection.execute("SELECT * FROM foods")
+    cursor = connection.execute("""
+        SELECT id, fdc_id, name, kcal, protein, carbs, fat
+        FROM foods
+    """)
+
     rows = cursor.fetchall()
 
     foods = []
 
     for row in rows:
-        food = Food(row[1], row[2], row[3], row[4], row[5], row[0])
+        food = Food(
+            name=row[2],
+            kcal=row[3],
+            pro=row[4],
+            carb=row[5],
+            fat=row[6],
+            id=row[0],
+            fdc_id=row[1]
+        )
+
         foods.append(food)
 
     connection.close()
@@ -280,6 +320,10 @@ def get_day(connection, day_id):
     """, (day_id,))
 
     row = cursor.fetchone()
+    
+    if row is None:
+        raise ValueError(f"No day found with ID {day_id}")
+
     day_date = date.fromisoformat(row[0])
     day = Day(day_date, day_id)
 
@@ -403,6 +447,7 @@ def save_cardio(cardio):
 
     cardio_id = cursor.lastrowid
 
+    connection.commit()
     connection.close()
     return cardio_id
 
@@ -438,14 +483,21 @@ def get_days():
 # Return food at food_id
 def get_food(connection, food_id):
     cursor = connection.execute("""
-        SELECT *
+        SELECT id, fdc_id, name, kcal, protein, carbs, fat
         FROM foods
         WHERE id = ?
     """, (food_id,))
 
     row = cursor.fetchone()
 
-    return Food(row[1],row[2],row[3],row[4],row[5],row[0])
+    return Food(name=row[2],
+        kcal=row[3],
+        pro=row[4],
+        carb=row[5],
+        fat=row[6],
+        id=row[0],
+        fdc_id=row[1]
+    )
 
 # Add food to preexisting meal
 def add_food_to_meal(meal_id, food_id, quantity):
@@ -470,12 +522,12 @@ def delete_meal(meal_id):
 
     connection.execute("""
         DELETE FROM day_meals
-        WHERE mea;l_id = ?
+        WHERE meal_id = ?
     """, (meal_id,))
 
     connection.execute("""
         DELETE FROM meals
-        WHRERE id = ?
+        WHERE id = ?
     """, (meal_id,))
 
     connection.commit()
