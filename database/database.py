@@ -127,6 +127,44 @@ def initialize_database():
         )
     """)
 
+    # Saved workout routines
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS workout_templates (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE
+        )
+    """)
+
+    # Exercises belonging to a saved routine
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS template_exercises (
+            id INTEGER PRIMARY KEY,
+            template_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            position INTEGER NOT NULL,
+            set_count INTEGER NOT NULL DEFAULT 3,
+            FOREIGN KEY (template_id)
+                REFERENCES workout_templates(id)
+                ON DELETE CASCADE,
+            UNIQUE (template_id, position)
+        )
+    """)
+
+    # Default set values for a template
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS template_sets (
+            id INTEGER PRIMARY KEY,
+            template_exercise_id INTEGER NOT NULL,
+            set_number INTEGER NOT NULL,
+            reps INTEGER,
+            weight REAL,
+            FOREIGN KEY (template_exercise_id)
+                REFERENCES template_exercises(id)
+                ON DELETE CASCADE,
+            UNIQUE (template_exercise_id, set_number)
+        )
+    """)
+
     connection.commit()
     connection.close()
 
@@ -617,3 +655,118 @@ def get_or_create_day(day_date):
     connection.close()
 
     return day_id
+
+# Save a workoutout template
+def save_workout_template(workout):
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute("""
+            INSERT INTO workout_templates (name)
+            VALUES (?)
+        """, (workout.name,))
+
+        template_id = cursor.lastrowid
+
+        for position, exercise in enumerate(workout.exercises):
+            cursor = connection.execute("""
+                INSERT INTO template_exercises (
+                    template_id, name, position, set_count
+                    )
+                    VALUES (?,?,?,?)
+                    """, (
+                        template_id,
+                        exercise.name,
+                        position,
+                        max(len(exercise.sets), 3)
+                    ))
+
+            template_exercise_id = cursor.lastrowid
+
+            for set_number, current_set in enumerate(exercise.sets, start=1):
+                reps, weight = current_set
+
+                connection.execute("""
+                    INSERT INTO template_sets (
+                        template_exercise_id,
+                        set_number,
+                        reps,
+                        weight
+                    )
+                    VALUES (?,?,?,?)
+                """, (
+                    template_exercise_id,
+                    set_number,
+                    reps,
+                    weight
+                ))
+
+        connection.commit()
+        return template_id
+
+    except Exception:
+        connection.rollback()
+        raise
+
+    finally:
+        connection.close()
+
+# Return the template for a workout
+def get_workout_templates():
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute("""
+            SELECT id, name
+            FROM workout_templates
+            ORDER BY name
+        """)
+
+        return cursor.fetchall()
+
+    finally:
+        connection.close()
+
+# Return all of the information from a workout_template
+def get_workout_template(connection, template_id):
+    cursor = connection.execute("""
+        SELECT id, name
+        FROM workout_templates
+        WHERE id = ?
+    """, (template_id,))
+
+    row = cursor.fetchone()
+
+    if row is None:
+        return None
+
+    template_id, name = row
+    workout = Workout(name)
+
+    cursor = connection.execute("""
+        SELECT id, name, set_count
+        FROM template_exercises
+        WHERE template_id = ?
+        ORDER BY position
+    """, (template_id,))
+
+    for exercise_id, exercise_name, set_count in cursor.fetchall():
+        exercise = Exercise(exercise_name)
+
+        cursor = connection.execute("""
+            SELECT reps, weight
+            FROM template_sets
+            WHERE template_exercise_id = ?
+            ORDER BY set_number
+        """, (exercise_id,))
+
+        for reps, weight in cursor.fetchall():
+            exercise.add_set(reps, weight)
+
+        # If no starting sets were saved, create empty set slots.
+        if not exercise.sets:
+            exercise.sets = [(0, 0.0)] * set_count
+
+        workout.add_exercise(exercise)
+
+    return workout

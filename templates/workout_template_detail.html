@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ workout.name }} - Kinetiq</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>{{ workout.name }}</h1>
+
+    {% for exercise in workout.exercises %}
+        <section class="exercise">
+            <h2>{{ exercise.name }}</h2>
+
+            {% for current_set in exercise.sets %}
+                <p>Set {{ loop.index }}: {{ current_set[0] }} reps × {{ current_set[1] }} lbs</p>
+            {% endfor %}
+        </section>
+    {% endfor %}
+
+    <a href="{{ url_for('workout_templates_page') }}">Back to templates</a>
+</body>
+</html>

@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Workout Template - Kinetiq</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Create Workout Template</h1>
+
+    <form method="POST">
+        <label for="name">Workout name</label>
+        <input id="name" name="name" type="text"
+               placeholder="e.g. Upper Body A" required>
+
+        <h2>Exercises</h2>
+        <div id="exercises"></div>
+
+        <button type="button" id="add-exercise">
+            + Add Exercise
+        </button>
+
+        <p>
+            <button type="submit">Save Template</button>
+        </p>
+    </form>
+
+    <a href="{{ url_for('workout_templates_page') }}">Cancel</a>
+
+    <script>
+        const exercisesContainer = document.getElementById("exercises");
+        const addExerciseButton = document.getElementById("add-exercise");
+
+        let exerciseCount = 0;
+
+        function addSet(exerciseDiv, exerciseIndex) {
+            const setDiv = document.createElement("div");
+            setDiv.className = "set-row";
+
+            const setNumber = exerciseDiv.querySelectorAll(".set-row").length + 1;
+
+            setDiv.innerHTML = `
+                <p>Set ${setNumber}</p>
+                <label>Reps
+                    <input type="number" name="reps_${exerciseIndex}"
+                           min="1" step="1" value="10" required>
+                </label>
+                <label>Weight (lbs)
+                    <input type="number" name="weight_${exerciseIndex}"
+                           min="0" step="any" value="0" required>
+                </label>
+                <button type="button" class="remove-set">Remove Set</button>
+            `;
+
+            setDiv.querySelector(".remove-set").addEventListener("click", () => {
+                setDiv.remove();
+                renumberSets(exerciseDiv);
+            });
+
+            exerciseDiv.querySelector(".sets").appendChild(setDiv);
+        }
+
+        function renumberSets(exerciseDiv) {
+            exerciseDiv.querySelectorAll(".set-row").forEach((setDiv, index) => {
+                setDiv.querySelector("p").textContent = `Set ${index + 1}`;
+            });
+        }
+
+        function addExercise() {
+            const index = exerciseCount++;
+            const exerciseDiv = document.createElement("section");
+            exerciseDiv.className = "exercise";
+
+            exerciseDiv.innerHTML = `
+                <h3>Exercise ${index + 1}</h3>
+                <label>Exercise name
+                    <input type="text" name="exercise_name"
+                           placeholder="e.g. Bench Press" required>
+                </label>
+                <div class="sets"></div>
+                <button type="button" class="add-set">+ Add Set</button>
+                <button type="button" class="remove-exercise">
+                    Remove Exercise
+                </button>
+            `;
+
+            exerciseDiv.querySelector(".add-set").addEventListener("click", () => {
+                addSet(exerciseDiv, index);
+            });
+
+            exerciseDiv.querySelector(".remove-exercise").addEventListener("click", () => {
+                exerciseDiv.remove();
+            });
+
+            exercisesContainer.appendChild(exerciseDiv);
+            addSet(exerciseDiv, index);
+            addSet(exerciseDiv, index);
+            addSet(exerciseDiv, index);
+        }
+
+        addExerciseButton.addEventListener("click", addExercise);
+
+        addExercise();
+    </script>
+</body>
+</html>

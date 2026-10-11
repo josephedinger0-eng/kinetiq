@@ -1,0 +1,33 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Templates - Kinetiq</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Workout Templates</h1>
+
+    <a href="{{ url_for('new_workout_template') }}">
+        + Create Workout Template
+    </a>
+
+    {% if templates %}
+        {% for template_id, template_name in templates %}
+            <section class="workout">
+                <h2>
+                    <a href="{{ url_for('view_workout_templates', template_id=template_id) }}">
+                        {{ template_name }}
+                    </a>
+                </h2>
+            </section>
+        {% endfor %}
+    {% else %}
+        <p>No workout templates saved yet.</p>
+    {% endif %}
+
+    <a href="{{ url_for('home') }}">Back to Kinetiq</a>
+</body>
+</html>

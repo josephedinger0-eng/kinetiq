@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 from database.database import *
 from models.day import Day
 from models.meal import Meal
+from models.workout import Workout
+from models.exercise import Exercise
 from datetime import date
 from nutrition.usda_api import create_food_from_local_data
 from nutrition.autocomplete import autocomplete
@@ -149,7 +151,6 @@ def delete_food(day_id, meal_id, entry_id):
     return redirect(url_for("day_page", day_id=day_id))
 
 # Edit an existing fodo_entry
-
 @app.route(
     "/day/<int:day_id>/meal/<int:meal_id>/food/<int:entry_id>/edit",
     methods=["GET", "POST"]
@@ -195,6 +196,68 @@ def search_foods_api():
     results = autocomplete(query, limit=15)
 
     return {"foods": results}
+
+# Show created workout templates
+@app.route("/workout-templates")
+def workout_templates_page():
+    templates = get_workout_templates()
+    return render_template("workout_templates.html", templates=templates)
+
+# Display a workout_template
+@app.route("/workout-templates/<int:template_id>")
+def view_workout_templates(template_id):
+    connection = get_connection()
+    workout = get_workout_template(connection, template_id)
+
+    if workout is None:
+        return "Workout template not found", 404
+    
+    connection.close()
+    return render_template("workout_template_detail.html", workout=workout, template_id=template_id)
+
+# Create a new workout template
+@app.route("/workout-templates/new", methods=["GET", "POST"])
+def new_workout_template():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        exercise_names = request.form.getlist("exercise_name")
+
+        if not name:
+            return "Please enter a workout name.", 400
+
+        if not exercise_names or any(not n.strip() for n in exercise_names):
+            return "Every exercise needs a name.", 400
+
+        workout = Workout(name)
+
+        try:
+            for i, exercise_name in enumerate(exercise_names):
+                exercise = Exercise(exercise_name.strip())
+
+                reps_values = request.form.getlist(f"reps_{i}")
+                weight_values = request.form.getlist(f"weight_{i}")
+
+                if not reps_values or len(reps_values) != len(weight_values):
+                    return f"Invalid sets for {exercise_name}", 400
+
+                for reps_text, weight_text in zip(reps_values, weight_values):
+                    reps = int(reps_text)
+                    weight = float(weight_text)
+
+                    if reps <=0 or weight < 0 or weight == float("inf"):
+                        raise ValueError
+
+                    exercise.add_set(reps, weight)
+
+                workout.add_exercise(exercise)
+
+        except (ValueError, TypeError):
+            return "Enter positive whole-number reps and a nonnegative weight."
+
+        save_workout_template(workout)
+        return redirect(url_for("workout_templates_page"))
+
+    return render_template("new_workout_template.html")
 
 # Display the about section
 @app.route("/about")
