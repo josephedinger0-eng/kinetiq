@@ -82,7 +82,7 @@ def initialize_database():
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
             workout_id INTEGER NOT NULL,
-            FOREIGN KEY (workout_id) REFERENCES workouts(id)
+            FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE CASCADE
         )
     """)
 
@@ -93,7 +93,7 @@ def initialize_database():
             exercise_id INTEGER NOT NULL,
             reps INTEGER NOT NULL,
             weight REAL NOT NULL,
-            FOREIGN KEY (exercise_id) REFERENCES exercises(id)
+            FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
         )
     """)
 
@@ -422,8 +422,8 @@ def save_workout(workout):
 
         exercise_id = cursor.lastrowid
         for current_set in exercise.sets:
-            reps = current_set[0]
-            weight = current_set[1]
+            reps = current_set[1]
+            weight = current_set[2]
             connection.execute("""
                 INSERT INTO sets (exercise_id, reps, weight)
                 VALUES (?, ?, ?)
@@ -437,14 +437,17 @@ def save_workout(workout):
 def get_workout(connection, workout_id):
 
     cursor = connection.execute("""
-        SELECT name 
+        SELECT id, name 
         FROM workouts
         WHERE id = ?
     """, (workout_id,))
 
     row = cursor.fetchone()
 
-    workout = Workout(row[0])
+    if row is None:
+        return None
+
+    workout = Workout(row[1], row[0])
 
     cursor = connection.execute("""
         SELECT id, name
@@ -455,20 +458,22 @@ def get_workout(connection, workout_id):
     rows = cursor.fetchall()
     for row in rows:
         exercise_id = row[0]
-        exercise = Exercise(row[1])
+        exercise = Exercise(row[1], row[0])
 
         cursor = connection.execute("""
-            SELECT reps, weight
+            SELECT id, reps, weight
             FROM sets
             WHERE exercise_id = ?
+            ORDER BY id
         """, (exercise_id,))
 
         set_rows = cursor.fetchall()
 
         for set_row in set_rows:
-            reps = set_row[0]
-            weight = set_row[1]
-            exercise.add_set(reps, weight)
+            set_id = set_row[0]
+            reps = set_row[1]
+            weight = set_row[2]
+            exercise.add_set(reps, weight, set_id)
 
         workout.add_exercise(exercise)
 
@@ -712,20 +717,14 @@ def save_workout_template(workout):
         connection.close()
 
 # Return the template for a workout
-def get_workout_templates():
-    connection = get_connection()
+def get_workout_templates(connection):
+    cursor = connection.execute("""
+        SELECT id, name
+        FROM workout_templates
+        ORDER BY name
+    """)
 
-    try:
-        cursor = connection.execute("""
-            SELECT id, name
-            FROM workout_templates
-            ORDER BY name
-        """)
-
-        return cursor.fetchall()
-
-    finally:
-        connection.close()
+    return cursor.fetchall()
 
 # Return all of the information from a workout_template
 def get_workout_template(connection, template_id):
@@ -770,3 +769,28 @@ def get_workout_template(connection, template_id):
         workout.add_exercise(exercise)
 
     return workout
+
+# Add a new set to an existing exercise
+def add_set_to_exercise(connection, exercise_id):
+
+    cursor = connection.execute("""
+        SELECT reps, weight
+        FROM sets
+        WHERE exercise_id = ?
+        ORDER BY id DESC
+        LIMIT 1
+    """, (exercise_id,))
+
+    last_set = cursor.fetchone()
+
+    if last_set is None:
+        reps, weight = 0, 0.0
+    else:
+        reps, weight = last_set
+
+    connection.execute("""
+        INSERT INTO sets (exercise_id, reps, weight)
+        VALUES (?,?,?)
+    """, (exercise_id, reps, weight))
+
+    connection.commit()

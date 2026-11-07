@@ -1,7 +1,8 @@
 # Define the workout class
 class Workout:
     # Basic constructor for a workout
-    def __init__(self, name):
+    def __init__(self, name, id=None):
+        self.id = id
         self.name = name
         self.exercises = []
 

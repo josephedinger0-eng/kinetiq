@@ -1,13 +1,14 @@
 # Define the exercise class
 class Exercise:
     # Basic constructor for an exercise
-    def __init__(self, name):
+    def __init__(self, name, id=None):
+        self.id = id
         self.name = name
         self.sets = [] # index represents set number, value represents reps
 
     # Add a set to the exercise
-    def add_set(self, reps, weight):
-        self.sets.append((reps, weight))
+    def add_set(self, reps, weight, set_id=None):
+        self.sets.append((set_id, reps, weight))
 
     # Print each set in an exercise
     def __str__(self):

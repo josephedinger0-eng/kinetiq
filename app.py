@@ -50,10 +50,16 @@ def new_day():
 @app.route("/day/<int:day_id>")
 def day_page(day_id):
     connection = get_connection()
-    day = get_day(connection, day_id)
-    connection.close()
 
-    return render_template("home.html", day=day)
+    try:
+        day = get_day(connection, day_id)
+        print("Day:", day.id)
+        print("Workouts:", day.workouts)
+        templates = get_workout_templates(connection)
+    finally:
+        connection.close()
+
+    return render_template("home.html", day=day, templates=templates)
 
 # Create a new meal in a day
 @app.route("/day/<int:day_id>/meal/new", methods=["GET", "POST"])
@@ -197,10 +203,119 @@ def search_foods_api():
 
     return {"foods": results}
 
+# Update existing workouts
+@app.route("/workout/<int:workout_id>/update", methods=["POST"])
+def update_workout(workout_id):
+    connection = get_connection()
+
+    try:
+        set_ids = request.form.getlist("set_id")
+
+        for set_id in set_ids:
+            reps = request.form.get(f"reps_{set_id}")
+            weight = request.form.get(f"weight_{set_id}")
+
+            connection.execute("""
+                UPDATE sets
+                SET reps = ?, weight = ?
+                WHERE id = ?
+            """, (reps, weight, set_id))
+
+            connection.commit()
+
+    except Exception:
+        connection.rollback()
+        raise
+
+    finally: 
+        cursor = connection.execute("""
+            SELECT day_id
+            FROM day_workouts
+            WHERE workout_id = ?
+        """, (workout_id,))
+
+        day_id = cursor.fetchone()[0]
+        connection.close()
+
+    return redirect(url_for("day_page", day_id=day_id))
+
+# Create a workout from a template and add it to a day
+@app.route("/day/<int:day_id>/workout/new", methods=["POST"])
+def new_workout(day_id):
+    try:
+        template_id = int(request.form["template_id"])
+        if template_id <= 0:
+            raise ValueError
+    except (ValueError, KeyError):
+        return "Please select a valid workout template.", 400
+
+    connection = get_connection()
+
+    try:
+        # Confirm that the day exists
+        day_row = connection.execute(
+            "SELECT id FROM days WHERE id = ?",
+            (day_id,)
+        ).fetchone()
+
+        if day_row is None:
+            return "Day not found.", 404
+
+        # Load the selected template
+        workout = get_workout_template(connection, template_id)
+
+        if workout is None:
+            return "Workout template not found.", 404
+
+        # Save the workout
+        cursor = connection.execute(
+            "INSERT INTO workouts (name) VALUES (?)",
+            (workout.name,)
+        )
+        workout_id = cursor.lastrowid
+
+        # Save its exercises and sets
+        for exercise in workout.exercises:
+            cursor = connection.execute(
+                "INSERT INTO exercises (name, workout_id) VALUES (?, ?)",
+                (exercise.name, workout_id)
+            )
+            exercise_id = cursor.lastrowid
+
+            for reps, weight in exercise.sets:
+                connection.execute(
+                    """INSERT INTO sets (exercise_id, reps, weight)
+                       VALUES (?, ?, ?)""",
+                    (exercise_id, reps, weight)
+                )
+
+        # Link the workout to the selected day
+        connection.execute(
+            """INSERT INTO day_workouts (day_id, workout_id)
+               VALUES (?, ?)""",
+            (day_id, workout_id)
+        )
+
+        connection.commit()
+
+    except Exception:
+        connection.rollback()
+        raise
+
+    finally:
+        connection.close()
+
+    return redirect(url_for("day_page", day_id=day_id))
+
+
 # Show created workout templates
 @app.route("/workout-templates")
 def workout_templates_page():
-    templates = get_workout_templates()
+    connection = get_connection()
+    try:
+        templates = get_workout_templates(connection)
+    finally:
+        connection.close()
     return render_template("workout_templates.html", templates=templates)
 
 # Display a workout_template
@@ -258,6 +373,44 @@ def new_workout_template():
         return redirect(url_for("workout_templates_page"))
 
     return render_template("new_workout_template.html")
+
+@app.route("/exercise/<int:exercise_id>/add-set", methods=["POST"])
+def add_set(exercise_id):
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute("""
+            SELECT workout_id
+            FROM exercises
+            WHERE id = ?
+        """, (exercise_id,))
+
+        row = cursor.fetchone()
+
+        if row is None:
+            return "Exercise not found", 404
+
+        workout_id = row[0]
+
+        cursor = connection.execute("""
+            SELECT day_id
+            FROM day_workouts
+            WHERE workout_id = ?
+        """, (workout_id,))
+
+        row = cursor.fetchone()
+
+        if row is None:
+            return "Workout not associated with a day", 404
+
+        day_id = row[0]
+
+        add_set_to_exercise(connection, exercise_id)
+
+    finally:
+        connection.close()
+
+    return redirect(url_for("day_page", day_id=day_id))
 
 # Display the about section
 @app.route("/about")

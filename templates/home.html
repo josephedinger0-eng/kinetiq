@@ -295,25 +295,109 @@
 
     <section>
 
-        <h2>Training</h2>
+        <div class="section-header">
+            <h2>Training</h2>
+
+            <button
+                type="button"
+                class="button"
+                id="show-workout-form">
+                + Add Workout
+            </button>
+        </div>
+
+        <div id="workout-form-container" class="inline-form" hidden>
+            <form id="workout-form" method="POST" action="{{ url_for('new_workout', day_id=day.id) }}">
+
+                <label for="workout-template">Choose a workout template</label>
+
+                <select id="workout-template" name="template_id" required>
+                    <option value="">Select a template...</option>
+
+                    {% for template in templates %}
+                        <option value="{{ template[0] }}">
+                            {{ template[1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit" class="button">
+                    Start Workout
+                </button>
+
+                <a class="small-button"
+                href="{{ url_for('new_workout_template') }}">
+                    Create New Template
+                </a>
+
+                <button
+                    type="button"
+                    class="small-button"
+                    id="cancel-workout-form">
+                    Cancel
+                </button>
+
+                <p id="workout-form-message" role="status"></p>
+            </form>
+        </div>
 
         {% for workout in day.workouts %}
-
-            <div class="workout"> 
-
+            <div class="workout">
                 <h3>{{ workout.name }}</h3>
-                
-                {% for exercise in workout.exercises %}
-                    <h4> {{ exercise.name }} </h4>
 
-                    {% for current_set in exercise.sets %}
-                        <p>{{ current_set[0] }} x {{ current_set[1] }}lbs</p>
+                <form method="POST"
+                    action="{{ url_for('update_workout', workout_id=workout.id) }}">
+
+                    {% for exercise in workout.exercises %}
+                        <div class="exercise">
+                            <h4>{{ exercise.name }}</h4>
+
+                            {% for current_set in exercise.sets %}
+
+                                <div class="set">
+                                    <input
+                                        type="hidden"
+                                        name="set_id"
+                                        value="{{ current_set[0] }}"
+                                    >
+
+                                    <label>Set {{ loop.index }}</label>
+
+                                    <input
+                                        type="number"
+                                        name="reps_{{ current_set[0] }}"
+                                        value="{{ current_set[1] }}"
+                                        min="1"
+                                        required
+                                    >
+
+                                    <input
+                                        type="number"
+                                        name="weight_{{ current_set[0] }}"
+                                        value="{{ current_set[2] }}"
+                                        min="0"
+                                        step="0.1"
+                                        required
+                                    >
+
+                                    <span>lbs</span>
+                                </div>
+                            {% endfor %}
+
+                            <button
+                                type="button"
+                                class="add-set-button"
+                                data-exercise-id="{{ exercise.id }}"
+                            >
+                                + Add Set 
+                            </button>
+                                
+                        </div>
                     {% endfor %}
 
-                {% endfor %}
-
+                    <button type="submit">Save Changes</button>
+                </form>
             </div>
-            
         {% endfor %}
 
     </section>
@@ -572,6 +656,82 @@ document.querySelectorAll(".food-entry").forEach((entry) => {
             message.textContent = error.message;
             saveButton.disabled = false;
         }
+    });
+});
+
+const showWorkoutButton = document.getElementById("show-workout-form");
+
+const workoutFormContainer = document.getElementById("workout-form-container");
+
+const cancelWorkoutButton = document.getElementById("cancel-workout-form");
+
+showWorkoutButton.addEventListener("click", () => {
+    workoutFormContainer.hidden = false;
+    showWorkoutButton.hidden = true;
+});
+
+cancelWorkoutButton.addEventListener("click", () => {
+    workoutFormContainer.querySelector("form").reset();
+    workoutFormContainer.hidden = true;
+    showWorkoutButton.hidden = false;
+});
+
+const workoutForm = document.getElementById("workout-form");
+const workoutFormMessage = document.getElementById("workout-form-message");
+
+workoutForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const submitButton = workoutForm.querySelector(
+        'button[type="submit"]'
+    );
+
+    submitButton.disabled = true;
+    workoutFormMessage.textContent = "Adding workout...";
+
+    try {
+        const response = await fetch(workoutForm.action, {
+            method: "POST",
+            body: new FormData(workoutForm)
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(error || "Could not add workout.");
+        }
+
+        // Reload the day to display the newly added workout.
+        window.location.reload();
+
+    } catch (error) {
+        workoutFormMessage.textContent = error.message;
+        submitButton.disabled = false;
+    }
+});
+
+// Add a set to an exercise
+function addSet(exerciseId) {
+    fetch(`/exercise/${exerciseId}/add-set`, {
+        method: "POST"
+    })
+    .then(response => {
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert("Could not add set.");
+        }
+    })
+    .catch(error => {
+        console.error("Error adding set:", error);
+    });
+}
+
+
+// Connect Add Set buttons
+document.querySelectorAll(".add-set-button").forEach(button => {
+    button.addEventListener("click", () => {
+        const exerciseId = button.dataset.exerciseId;
+        addSet(exerciseId);
     });
 });
 </script>
